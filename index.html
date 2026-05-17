@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SonicTrack — Ses Yönü Bulucu</title>
+  <title>SonicTrack — Ses Yönü Bulucu (STEREO)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
@@ -34,7 +34,6 @@
       overflow-x: hidden;
     }
 
-    /* Animated scanlines */
     body::after {
       content:'';
       position:fixed; inset:0;
@@ -48,7 +47,6 @@
       pointer-events:none; z-index:999;
     }
 
-    /* Grid bg */
     body::before {
       content:'';
       position:fixed; inset:0;
@@ -69,7 +67,6 @@
       padding: 0 16px calc(var(--safe-bottom) + 16px);
     }
 
-    /* ── HEADER ── */
     .header {
       display:flex; align-items:center; justify-content:space-between;
       padding: 48px 0 20px;
@@ -114,7 +111,6 @@
     .sdot { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:all .3s; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    /* ── RADAR ── */
     .radar-wrap {
       position:relative;
       width:300px; height:300px;
@@ -127,7 +123,6 @@
       border-radius:50%;
     }
 
-    /* Needle */
     .needle-pivot {
       position:absolute;
       top:50%; left:50%;
@@ -162,7 +157,6 @@
       box-shadow:0 0 8px var(--accent2);
     }
 
-    /* Labels on radar */
     .rlabel {
       position:absolute;
       font-family:var(--font-mono);
@@ -177,7 +171,6 @@
     .rlabel.left   { top:50%;   left:16px; }
     .rlabel.right  { top:50%;   right:2px; }
 
-    /* ── ANGLE READOUT ── */
     .readout {
       text-align:center;
       margin-bottom:18px;
@@ -201,7 +194,6 @@
       transition:all .3s;
     }
 
-    /* ── CONFIDENCE BAR ── */
     .conf-track {
       height:4px;
       background:var(--surface2);
@@ -217,7 +209,6 @@
       width:0%;
     }
 
-    /* ── STATS GRID ── */
     .stats {
       display:grid;
       grid-template-columns:repeat(3,1fr);
@@ -251,7 +242,6 @@
     .stat-val.c-green  { color:var(--accent3); }
     .stat-val.c-warn   { color:var(--warn); }
 
-    /* ── SPECTRUM ── */
     .spectrum-wrap {
       background:var(--surface);
       border:1px solid var(--border);
@@ -278,7 +268,6 @@
     }
     #specCanvas { width:100%; height:70px; display:block; }
 
-    /* ── HISTORY ── */
     .history-wrap {
       background:var(--surface);
       border:1px solid var(--border);
@@ -320,7 +309,6 @@
     .h-conf { color:var(--muted); font-size:10px; }
     .empty-hint { text-align:center; color:var(--muted); font-size:12px; font-family:var(--font-mono); padding:14px 0; }
 
-    /* ── BUTTONS ── */
     .btn-row { display:flex; gap:10px; margin-bottom:10px; }
 
     .btn-primary {
@@ -354,7 +342,6 @@
     }
     .btn-secondary:active { background:var(--surface); }
 
-    /* ── SAVE TOAST ── */
     .toast {
       position:fixed; top:20px; right:20px;
       background:rgba(0,255,157,.12);
@@ -371,19 +358,18 @@
     }
     .toast.show { opacity:1; transform:translateY(0); }
 
-    /* ── NOTICE ── */
     .notice {
-      background:rgba(255,184,48,.08);
-      border:1px solid rgba(255,184,48,.2);
+      background:rgba(0,200,255,0.06);
+      border:1px solid rgba(0,200,255,0.2);
       border-radius:var(--radius);
       padding:12px 14px;
       font-size:12px;
-      color:var(--warn);
+      color:var(--accent);
       line-height:1.6;
       margin-bottom:18px;
       font-family:var(--font-mono);
     }
-    .notice strong { display:block; margin-bottom:4px; letter-spacing:1px; }
+    .notice strong { display:block; margin-bottom:4px; letter-spacing:1px; color:var(--accent3); }
 
     .history-list::-webkit-scrollbar { width:3px; }
     .history-list::-webkit-scrollbar-track { background:transparent; }
@@ -399,7 +385,6 @@
 
 <div class="app">
 
-  <!-- HEADER -->
   <div class="header">
     <div class="logo">
       <div class="logo-badge">
@@ -417,13 +402,11 @@
     </div>
   </div>
 
-  <!-- NOTICE -->
   <div class="notice">
-    <strong>⚠ TEK MİKROFON MODU</strong>
-    Telefon mikrofonu genellikle tek kanallı çalışır. Bu uygulama ses enerjisi, frekans değişimi ve genlik analizi ile yön tahmin eder. En iyi sonuç için farklı yönlerden net ses üretin.
+    <strong>🎯 GERÇEK STEREO MODU AKTİF</strong>
+    Uygulama iki mikrofonu tamamen ayırarak Cross-Correlation (Zaman Gecikmesi) ile ses yönünü hesaplar. Google Chrome'da en yüksek doğrulukla çalışır.
   </div>
 
-  <!-- RADAR -->
   <div class="radar-wrap">
     <canvas id="radarCanvas" width="300" height="300"></canvas>
 
@@ -440,7 +423,6 @@
     <div class="rlabel right">ARKA</div>
   </div>
 
-  <!-- READOUT -->
   <div class="readout">
     <div>
       <span class="readout-num" id="angleNum">--</span><span class="readout-deg">°</span>
@@ -449,19 +431,17 @@
     <div class="readout-dir" id="dirLabel">—</div>
   </div>
 
-  <!-- CONFIDENCE BAR -->
   <div class="conf-track">
     <div class="conf-fill" id="confFill"></div>
   </div>
 
-  <!-- STATS -->
   <div class="stats">
     <div class="stat-card" id="sc1">
       <div class="stat-lbl">Güven</div>
       <div class="stat-val c-accent" id="sv1">—</div>
     </div>
     <div class="stat-card" id="sc2">
-      <div class="stat-lbl">Seviye</div>
+      <div class="stat-lbl">Gecikme</div>
       <div class="stat-val" id="sv2">—</div>
     </div>
     <div class="stat-card" id="sc3">
@@ -470,16 +450,14 @@
     </div>
   </div>
 
-  <!-- SPECTRUM -->
   <div class="spectrum-wrap">
     <div class="spectrum-hdr">
-      <div class="spectrum-title">Frekans Spektrumu</div>
-      <div class="mode-tag" id="modeTag">MONO</div>
+      <div class="spectrum-title">Frekans Spektrumu (Sol Kanal)</div>
+      <div class="mode-tag" id="modeTag">STEREO BEKLEMEDE</div>
     </div>
     <canvas id="specCanvas" height="70"></canvas>
   </div>
 
-  <!-- HISTORY -->
   <div class="history-wrap">
     <div class="history-hdr">
       <div class="history-title">Algılama Geçmişi</div>
@@ -490,7 +468,6 @@
     </div>
   </div>
 
-  <!-- BUTTONS -->
   <div class="btn-row">
     <button class="btn-primary" id="btnMain" onclick="toggleMic()">▶ Mikrofonu Başlat</button>
     <button class="btn-secondary" onclick="clearAll()">Temizle</button>
@@ -500,46 +477,38 @@
 
 <script>
 // ══════════════════════════════════════════════
-//  STATE
+//  YAZILIMSAL VE DONANIMSAL STATE
 // ══════════════════════════════════════════════
-let audioCtx, analyser, source, stream;
+let audioCtx, source, stream;
+let analyserL, analyserR; 
 let isRunning = false;
 let loopTimer = null;
 let totalSaved = 0;
 let historyData = [];
 
-// Smoothed values
+// Filtreleme ve Yumuşatma Değerleri
 let smoothAngle  = 90;
 let smoothConf   = 0;
-let smoothLevel  = 0;
+let lastLogTs    = 0;
 
-// Ring buffer for angle history (direction stability)
-const ANGLE_BUF_SIZE = 8;
+const ANGLE_BUF_SIZE = 6;
 let angleBuf = Array(ANGLE_BUF_SIZE).fill(90);
 let angleBufIdx = 0;
 
-// For delta-based direction estimation
-let prevFreqData = null;
-let prevRMS = 0;
-let lastLogTs = 0;
-
-// Canvas references
 const radarCvs = document.getElementById('radarCanvas');
 const radarCtx = radarCvs.getContext('2d');
 const specCvs  = document.getElementById('specCanvas');
 const specCtx  = specCvs.getContext('2d');
 
 // ══════════════════════════════════════════════
-//  RADAR DRAW
+//  RADAR ÇİZİM MOTORU
 // ══════════════════════════════════════════════
 let sweepRad = 0;
-let glowAngle = 90;
 
 function drawRadar() {
   const W = 300, H = 300, cx = W/2, cy = H/2, R = 130;
   radarCtx.clearRect(0, 0, W, H);
 
-  // Background glow
   const bgGrad = radarCtx.createRadialGradient(cx,cy,0,cx,cy,R);
   bgGrad.addColorStop(0, 'rgba(0,200,255,0.06)');
   bgGrad.addColorStop(1, 'rgba(0,200,255,0)');
@@ -548,7 +517,6 @@ function drawRadar() {
   radarCtx.arc(cx,cy,R,0,Math.PI*2);
   radarCtx.fill();
 
-  // Rings
   [0.33, 0.66, 1].forEach(f => {
     radarCtx.beginPath();
     radarCtx.arc(cx, cy, R*f, 0, Math.PI*2);
@@ -557,14 +525,12 @@ function drawRadar() {
     radarCtx.stroke();
   });
 
-  // Cross-hairs
   radarCtx.strokeStyle = 'rgba(0,200,255,0.12)';
   radarCtx.lineWidth = 0.8;
   [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2]) => {
     radarCtx.beginPath(); radarCtx.moveTo(x1,y1); radarCtx.lineTo(x2,y2); radarCtx.stroke();
   });
 
-  // Tick marks
   for (let i=0; i<72; i++) {
     const deg = i*5 - 90;
     const rad = deg * Math.PI / 180;
@@ -578,18 +544,15 @@ function drawRadar() {
     radarCtx.stroke();
   }
 
-  // Sweep line
   if (isRunning) {
-    sweepRad += 0.025;
+    sweepRad += 0.035;
     const sweep = sweepRad;
     radarCtx.save();
     radarCtx.beginPath();
     radarCtx.moveTo(cx,cy);
     radarCtx.arc(cx,cy,R, sweep-0.8, sweep);
     radarCtx.closePath();
-    const sg = radarCtx.createLinearGradient(
-      cx+Math.cos(sweep-0.4)*R/2, cy+Math.sin(sweep-0.4)*R/2, cx, cy
-    );
+    const sg = radarCtx.createLinearGradient(cx+Math.cos(sweep-0.4)*R/2, cy+Math.sin(sweep-0.4)*R/2, cx, cy);
     sg.addColorStop(0,'rgba(0,200,255,0.18)');
     sg.addColorStop(1,'rgba(0,200,255,0)');
     radarCtx.fillStyle = sg;
@@ -602,27 +565,25 @@ function drawRadar() {
     radarCtx.restore();
   }
 
-  // Direction highlight arc
-  if (smoothConf > 0.05) {
+  if (smoothConf > 0.15) {
     const targetRad = (smoothAngle - 90) * Math.PI / 180;
-    const spread = (Math.PI / 5) * smoothConf;
+    const spread = (Math.PI / 6) * (1 - smoothConf + 0.2);
     const grad2 = radarCtx.createLinearGradient(cx,cy, cx+R*Math.cos(targetRad), cy+R*Math.sin(targetRad));
     grad2.addColorStop(0, 'rgba(0,200,255,0)');
-    grad2.addColorStop(1, `rgba(0,200,255,${smoothConf * 0.35})`);
+    grad2.addColorStop(1, `rgba(0,200,255,${smoothConf * 0.4})`);
     radarCtx.beginPath();
     radarCtx.moveTo(cx,cy);
     radarCtx.arc(cx,cy,R, targetRad-spread, targetRad+spread);
     radarCtx.closePath();
     radarCtx.fillStyle = grad2;
     radarCtx.fill();
-    // Arc stroke
+    
     radarCtx.beginPath();
-    radarCtx.arc(cx,cy,R*0.92, targetRad-spread*0.5, targetRad+spread*0.5);
-    radarCtx.strokeStyle = `rgba(0,200,255,${smoothConf*0.8})`;
-    radarCtx.lineWidth=2.5; radarCtx.stroke();
+    radarCtx.arc(cx,cy,R*0.92, targetRad-spread*0.4, targetRad+spread*0.4);
+    radarCtx.strokeStyle = `rgba(0,255,157,${smoothConf*0.9})`;
+    radarCtx.lineWidth=3; radarCtx.stroke();
   }
 
-  // Center dot
   radarCtx.beginPath();
   radarCtx.arc(cx,cy,5,0,Math.PI*2);
   radarCtx.fillStyle='var(--accent2)';
@@ -632,17 +593,10 @@ function drawRadar() {
 }
 drawRadar();
 
-// ══════════════════════════════════════════════
-//  NEEDLE
-// ══════════════════════════════════════════════
 function updateNeedle(angle) {
-  const rotate = angle - 90;
-  document.getElementById('needlePivot').style.transform = `rotate(${rotate}deg)`;
+  document.getElementById('needlePivot').style.transform = `rotate(${angle - 90}deg)`;
 }
 
-// ══════════════════════════════════════════════
-//  SPECTRUM
-// ══════════════════════════════════════════════
 function drawSpectrum(freqData) {
   const W = specCvs.offsetWidth * (window.devicePixelRatio || 1);
   const H = 140;
@@ -656,193 +610,130 @@ function drawSpectrum(freqData) {
   for (let i=0; i<bins; i++) {
     const norm = (freqData[i] + 140) / 140;
     const h = norm * H;
-    const hue = 180 + norm * 60;
+    const hue = 190 + norm * 50;
     specCtx.fillStyle = `hsla(${hue},100%,60%,0.8)`;
     specCtx.fillRect(i*bw, H-h, bw-1, h);
   }
 }
 
 // ══════════════════════════════════════════════
-//  DIRECTION ENGINE (Mono-mode)
-//  Uses multiple cues:
-//   1. Spectral centroid shift (high freq → closer/front)
-//   2. RMS change asymmetry (left-right phantom via energy delta)
-//   3. Spectral flux (rapid changes hint at angle)
-//   4. Low-freq ratio (bass-heavy → rear/far)
+//  STEREO DOS-TDOA (Cross-Correlation) MOTORU
 // ══════════════════════════════════════════════
-function analyzeDirection(freqData, timeData) {
-  const N = freqData.length;
+function processStereoLocalization(dataL, dataR) {
+  const len = dataL.length;
+  
+  // Sinyal Enerjisi (RMS) Kontrolü
+  let rmsL = 0;
+  for (let i = 0; i < len; i++) rmsL += dataL[i] * dataL[i];
+  rmsL = Math.sqrt(rmsL / len);
 
-  // ── RMS ──
-  let rms = 0;
-  for (let i=0; i<timeData.length; i++) rms += timeData[i]*timeData[i];
-  rms = Math.sqrt(rms / timeData.length);
-  smoothLevel += (rms - smoothLevel) * 0.2;
+  // Ortam çok sessizse analiz yapma
+  if (rmsL < 0.015) return null;
 
-  // Energy gate — only process if loud enough
-  if (rms < 0.01) return null;
+  let maxCorrelation = -Infinity;
+  let bestDelay = 0;
+  
+  // Arama aralığı: İki mikrofon arasındaki fiziksel örnekleme gecikme sınırı
+  const MAX_SAMPLE_DELAY = 18; 
 
-  // ── SPECTRAL CENTROID ──
-  // Higher centroid → sound coming from front/closer
-  // Lower centroid → sound from rear/farther
-  let wSum = 0, sum = 0;
-  for (let i=0; i<N; i++) {
-    const mag = Math.pow(10, freqData[i]/20);
-    wSum += i * mag;
-    sum  += mag;
-  }
-  const centroid = sum > 0 ? wSum/sum : N/2;
-  const centroidNorm = centroid / N; // 0..1
-
-  // ── SPECTRAL FLUX (frame-to-frame change) ──
-  let flux = 0;
-  let fluxL = 0, fluxR = 0;
-  if (prevFreqData) {
-    const mid = Math.floor(N/2);
-    for (let i=0; i<N; i++) {
-      const d = freqData[i] - prevFreqData[i];
-      const pos = Math.max(0, d);
-      if (i < mid) fluxL += pos;
-      else fluxR += pos;
-      flux += pos;
+  // Cross-Correlation Hesabı
+  for (let delay = -MAX_SAMPLE_DELAY; delay <= MAX_SAMPLE_DELAY; delay++) {
+    let correlation = 0;
+    for (let i = 0; i < len; i++) {
+      let rIdx = i + delay;
+      if (rIdx >= 0 && rIdx < len) {
+        correlation += dataL[i] * dataR[rIdx];
+      }
+    }
+    if (correlation > maxCorrelation) {
+      maxCorrelation = correlation;
+      bestDelay = delay;
     }
   }
-  prevFreqData = new Float32Array(freqData);
 
-  // ── LOW-FREQ RATIO ──
-  // High low-freq → muffled → likely rear
-  let lowE = 0, highE = 0;
-  const lowCut = Math.floor(N * 0.15);
-  for (let i=0; i<N; i++) {
-    const mag = Math.pow(10, freqData[i]/20);
-    if (i < lowCut) lowE += mag;
-    else highE += mag;
-  }
-  const lowRatio = lowE / (lowE + highE + 0.001);
+  // Gecikmeyi Açıya Eşleme (0° Tam Sol, 90° Merkez, 180° Tam Sağ)
+  let calculatedAngle = 90 + (bestDelay * (90 / MAX_SAMPLE_DELAY));
+  calculatedAngle = Math.max(0, Math.min(180, calculatedAngle));
 
-  // ── RMS DELTA ──
-  const rmsDelta = rms - prevRMS;
-  prevRMS = rms;
+  // Güven Skoru Hesaplama
+  let totalEnergy = 0;
+  for(let i=0; i<len; i++) totalEnergy += Math.abs(dataL[i]) * Math.abs(dataR[i]);
+  let conf = totalEnergy > 0 ? Math.min(1, maxCorrelation / (totalEnergy * 0.85)) : 0;
+  if(isNaN(conf)) conf = 0;
 
-  // ══ COMBINE CUES → ANGLE ESTIMATE ══
-  // Base: centroid maps high→left(0°), low→right(180°)
-  // but phones vary — we use relative changes instead
-  let angleCue = 90; // default: center
-
-  // Cue 1: Spectral centroid
-  // High centroid (bright sound) → treat as coming slightly from one side
-  const centroidAngle = 90 + (centroidNorm - 0.5) * 120;
-
-  // Cue 2: Flux asymmetry — if left-band changes more, lean left
-  const fluxAsymmetry = flux > 0 ? (fluxL - fluxR) / (fluxL + fluxR + 0.001) : 0;
-  const fluxAngle = 90 + fluxAsymmetry * 70;
-
-  // Cue 3: Low ratio — high low content → more rear (larger angle toward right/rear)
-  const lowAngle = 90 + (lowRatio - 0.3) * 80;
-
-  // Cue 4: RMS spike direction — rapid rise from quiet suggests new source
-  const rmsAngle = rmsDelta > 0.02 ? 90 + (centroidNorm - 0.5) * 100 : 90;
-
-  // Weighted combine
-  let w1=0.35, w2=0.3, w3=0.2, w4=0.15;
-  angleCue = centroidAngle*w1 + fluxAngle*w2 + lowAngle*w3 + rmsAngle*w4;
-
-  // Clamp
-  angleCue = Math.max(5, Math.min(175, angleCue));
-
-  // ── CONFIDENCE ──
-  // Confidence is high when:
-  // - RMS is high (loud sound)
-  // - Flux is significant (signal is changing)
-  // - Cues agree with each other
-  const cueSpread = Math.abs(centroidAngle - fluxAngle) / 180;
-  const conf = Math.min(1,
-    rms * 4 *
-    (1 - cueSpread * 0.5) *
-    Math.min(1, flux * 0.1 + 0.3)
-  );
-
-  return { angle: angleCue, conf, rms };
+  return { angle: calculatedAngle, confidence: conf, delay: bestDelay };
 }
 
-// ══════════════════════════════════════════════
-//  DIRECTION TEXT
-// ══════════════════════════════════════════════
 function dirText(a) {
-  if (a < 20)  return '◀◀ Sol Ön';
-  if (a < 50)  return '◀ Sol';
-  if (a < 80)  return '↖ Sol Arka';
-  if (a < 100) return '↑ Karşı';
-  if (a < 130) return '↗ Sağ Arka';
-  if (a < 160) return 'Sağ ▶';
-  return 'Sağ Ön ▶▶';
+  if (a < 30)  return '◀◀ Sol Sektör';
+  if (a < 75)  return '◀ Ön Sol';
+  if (a < 105) return '↑ Doğrudan Karşı';
+  if (a < 150) return 'Ön Sağ ▶';
+  return 'Sağ Sektör ▶▶';
 }
 
 // ══════════════════════════════════════════════
-//  MAIN LOOP
+//  ANA DOSYA DÖNGÜSÜ
 // ══════════════════════════════════════════════
 function mainLoop() {
   if (!isRunning) return;
 
-  const FFT = analyser.frequencyBinCount;
-  const freqData = new Float32Array(FFT);
-  const timeData = new Float32Array(FFT);
-  analyser.getFloatFrequencyData(freqData);
-  analyser.getFloatTimeDomainData(timeData);
+  const FFT = analyserL.frequencyBinCount;
+  const timeDataL = new Float32Array(FFT);
+  const timeDataR = new Float32Array(FFT);
+  const freqDataL = new Float32Array(FFT);
 
-  drawSpectrum(freqData);
+  analyserL.getFloatTimeDomainData(timeDataL);
+  analyserR.getFloatTimeDomainData(timeDataR);
+  analyserL.getFloatFrequencyData(freqDataL);
 
-  const result = analyzeDirection(freqData, timeData);
+  drawSpectrum(freqDataL);
 
-  if (result) {
-    // Push to ring buffer
+  const result = processStereoLocalization(timeDataL, timeDataR);
+
+  if (result && result.confidence > 0.2) {
     angleBuf[angleBufIdx % ANGLE_BUF_SIZE] = result.angle;
     angleBufIdx++;
-    // Median filter for stability
+    
     const sorted = [...angleBuf].sort((a,b)=>a-b);
     const medAngle = sorted[Math.floor(ANGLE_BUF_SIZE/2)];
 
-    // Smooth
-    const diff = medAngle - smoothAngle;
-    smoothAngle += diff * 0.2;
-    smoothConf  += (result.conf - smoothConf) * 0.2;
-    smoothLevel += (result.rms - smoothLevel) * 0.15;
+    smoothAngle += (medAngle - smoothAngle) * 0.25;
+    smoothConf  += (result.confidence - smoothConf) * 0.25;
 
-    // Update UI
+    // UI Güncelleme
     updateNeedle(smoothAngle);
     document.getElementById('angleNum').textContent = Math.round(smoothAngle);
-    document.getElementById('angleNum').classList.toggle('hot', smoothConf > 0.3);
+    document.getElementById('angleNum').classList.toggle('hot', smoothConf > 0.4);
     document.getElementById('dirLabel').textContent = dirText(smoothAngle);
     document.getElementById('confFill').style.width = Math.round(smoothConf*100) + '%';
+    
     document.getElementById('sv1').textContent = Math.round(smoothConf*100) + '%';
-    document.getElementById('sv2').textContent = (smoothLevel*100).toFixed(1) + ' dB';
+    document.getElementById('sv2').textContent = (result.delay > 0 ? '+' : '') + result.delay + ' spl';
 
-    const s1 = document.getElementById('sc1');
-    s1.classList.toggle('lit', smoothConf > 0.3);
+    document.getElementById('sc1').classList.toggle('lit', smoothConf > 0.4);
+    document.getElementById('statusTxt').textContent = 'Sinyal Yakalandı';
 
-    document.getElementById('statusTxt').textContent = result.rms > 0.01 ? 'Algılandı!' : 'Dinleniyor...';
-
-    // Log strong events
-    if (smoothConf > 0.2 && result.rms > 0.02) {
+    // Google Tabloya Log Atma Limiti (700ms)
+    if (smoothConf > 0.35) {
       const now = Date.now();
       if (now - lastLogTs > 700) {
         lastLogTs = now;
-        logEntry(smoothAngle, smoothConf);
+        logEntry(smoothAngle, smoothConf, result.delay);
       }
     }
   } else {
-    document.getElementById('statusTxt').textContent = 'Sessiz...';
+    document.getElementById('statusTxt').textContent = 'Dinleniyor...';
     document.getElementById('confFill').style.width = '0%';
-    drawSpectrum(null);
   }
 
-  loopTimer = setTimeout(mainLoop, 100); // 10 fps
+  loopTimer = setTimeout(mainLoop, 120); // ~8 Hz güncelleme hızı
 }
 
 // ══════════════════════════════════════════════
-//  HISTORY LOG
+//  KAYIT VE ENTEGRASYON YÖNETİMİ
 // ══════════════════════════════════════════════
-function logEntry(angle, conf) {
+function logEntry(angle, conf, delay) {
   const t = new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
   const entry = { time: t, angle: Math.round(angle), conf: Math.round(conf*100) };
   historyData.unshift(entry);
@@ -853,12 +744,12 @@ function logEntry(angle, conf) {
   document.getElementById('histCnt').textContent = historyData.length + ' kayıt';
   renderHistory();
 
-  // Save to Google Sheets
+  // Google Apps Script API Bağlantısı
   if (typeof google !== 'undefined' && google.script) {
     google.script.run
       .withSuccessHandler(() => showToast())
-      .withFailureHandler(e => console.warn('Kayıt hatası:', e))
-      .kaydetSesYonu(entry.angle, (conf).toFixed(3), 0, t);
+      .withFailureHandler(e => console.warn('Kayıt Hatası:', e))
+      .kaydetSesYonu(entry.angle, (conf).toFixed(3), delay, t);
   }
 }
 
@@ -873,7 +764,7 @@ function renderHistory() {
       <span class="h-time">${e.time}</span>
       <span class="h-angle">${e.angle}°</span>
       <div class="h-bar-wrap"><div class="h-bar" style="width:${e.conf}%"></div></div>
-      <span class="h-conf">${e.conf}%</span>
+      <span class="h-conf">%${e.conf}</span>
     </div>
   `).join('');
 }
@@ -889,18 +780,14 @@ function clearAll() {
 function showToast() {
   const el = document.getElementById('toast');
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1800);
+  setTimeout(() => el.classList.remove('show'), 1500);
 }
 
 // ══════════════════════════════════════════════
-//  MIC CONTROL
+//  MİKROFON DONANIM DENETİMİ (STEREO MAPPING)
 // ══════════════════════════════════════════════
 async function toggleMic() {
-  if (isRunning) {
-    stopMic();
-  } else {
-    await startMic();
-  }
+  if (isRunning) stopMic(); else await startMic();
 }
 
 async function startMic() {
@@ -908,15 +795,11 @@ async function startMic() {
   btn.textContent = 'Bağlanıyor...';
   btn.disabled = true;
 
-  if (!navigator.mediaDevices?.getUserMedia) {
-    alert('Bu cihaz mikrofon erişimini desteklemiyor. HTTPS gereklidir.');
-    btn.disabled = false; btn.textContent = '▶ Mikrofonu Başlat';
-    return;
-  }
-
   try {
+    // Chrome donanım filtresini aşmak için Agresif Stereo Ayarları
     stream = await navigator.mediaDevices.getUserMedia({
       audio: {
+        channelCount: { ideal: 2, exact: 2 },
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
@@ -927,24 +810,31 @@ async function startMic() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-    // Check channel count
-    const track = stream.getAudioTracks()[0];
-    const settings = track.getSettings();
-    const isStereo = settings.channelCount >= 2;
-    document.getElementById('modeTag').textContent = isStereo ? 'STEREO' : 'MONO';
+    const sourceNode = audioCtx.createMediaStreamSource(stream);
+    
+    // Kanalları fiziksel olarak SOL ve SAĞ olarak ikiye bölüyoruz
+    const splitter = audioCtx.createChannelSplitter(2);
+    sourceNode.connect(splitter);
 
-    source  = audioCtx.createMediaStreamSource(stream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.4;
-    source.connect(analyser);
+    analyserL = audioCtx.createAnalyser();
+    analyserR = audioCtx.createAnalyser();
+    
+    analyserL.fftSize = 2048;
+    analyserR.fftSize = 2048;
+
+    // Fiziksel Haritalama: 
+    splitter.connect(analyserL, 0); // Sol Mikrofon Kanala Bağlandı
+    splitter.connect(analyserR, 1); // Sağ Mikrofon Kanala Bağlandı
+
+    const track = stream.getAudioTracks()[0];
+    const actualChannels = track.getSettings().channelCount;
+    
+    document.getElementById('modeTag').textContent = actualChannels >= 2 ? 'GERÇEK STEREO' : 'DONANIM MONO MODUNDA';
+    if(actualChannels < 2) alert("Tarayıcı çift kanal doğrulaması yapamadı. Cihazınızın stereo desteklediğinden emin olun.");
 
     isRunning = true;
-    prevFreqData = null;
-    prevRMS = 0;
     angleBuf.fill(90);
 
-    // UI
     const badge = document.getElementById('statusBadge');
     badge.classList.add('live');
     document.getElementById('statusTxt').textContent = 'Aktif';
@@ -955,7 +845,7 @@ async function startMic() {
     mainLoop();
 
   } catch (err) {
-    alert('Mikrofon erişimi reddedildi.\n\nAyarlar > Gizlilik > Mikrofon bölümünden izin verin.\n\nHata: ' + err.message);
+    alert('Mikrofon bağlantı hatası. Lütfen HTTPS protokolü kullandığınızdan ve mikrofon izinlerinin açık olduğundan emin olun.\n\nHata: ' + err.message);
     btn.disabled = false;
     btn.textContent = '▶ Mikrofonu Başlat';
   }
@@ -965,12 +855,11 @@ function stopMic() {
   isRunning = false;
   clearTimeout(loopTimer);
 
-  if (source) { try { source.disconnect(); } catch(e){} }
   if (audioCtx) { audioCtx.close(); audioCtx = null; }
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 
-  analyser = null; source = null; prevFreqData = null;
-  smoothAngle = 90; smoothConf = 0; smoothLevel = 0;
+  analyserL = null; analyserR = null;
+  smoothAngle = 90; smoothConf = 0;
   angleBuf.fill(90);
 
   const btn = document.getElementById('btnMain');
@@ -992,7 +881,6 @@ function stopMic() {
   drawSpectrum(null);
 }
 
-// Init
 drawSpectrum(null);
 </script>
 </body>
