@@ -5,26 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>SonicTrack — Ses Yönü Bulucu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface2: #1a1a26;
-      --border: rgba(255,255,255,0.07);
-      --accent: #00e5ff;
-      --accent2: #7c3aed;
-      --accent3: #ff6b6b;
-      --text: #f0f0f5;
-      --muted: #6b6b80;
-      --green: #00d68f;
-      --font-mono: 'Space Mono', monospace;
-      --font-sans: 'DM Sans', sans-serif;
-      --radius: 16px;
+      --bg: #060810;
+      --surface: #0d1020;
+      --surface2: #131828;
+      --border: rgba(0,200,255,0.1);
+      --accent: #00c8ff;
+      --accent2: #ff4d6d;
+      --accent3: #00ff9d;
+      --warn: #ffb830;
+      --text: #e8f0ff;
+      --muted: #4a5580;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-sans: 'Exo 2', sans-serif;
+      --radius: 12px;
       --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
     body {
       font-family: var(--font-sans);
@@ -33,460 +32,368 @@
       min-height: 100vh;
       min-height: -webkit-fill-available;
       overflow-x: hidden;
-      position: relative;
     }
 
-    /* Animated background grid */
+    /* Animated scanlines */
+    body::after {
+      content:'';
+      position:fixed; inset:0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,200,255,0.015) 2px,
+        rgba(0,200,255,0.015) 4px
+      );
+      pointer-events:none; z-index:999;
+    }
+
+    /* Grid bg */
     body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+      content:'';
+      position:fixed; inset:0;
       background-image:
-        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+        linear-gradient(rgba(0,200,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events:none; z-index:0;
     }
 
     .app {
-      position: relative;
-      z-index: 1;
-      max-width: 420px;
+      position:relative; z-index:1;
+      max-width: 430px;
       margin: 0 auto;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: 0 20px calc(var(--safe-bottom) + 20px);
+      padding: 0 16px calc(var(--safe-bottom) + 16px);
     }
 
     /* ── HEADER ── */
     .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 52px 0 24px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 48px 0 20px;
     }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .logo { display:flex; align-items:center; gap:10px; }
+    .logo-badge {
+      width:40px; height:40px;
+      background: conic-gradient(from 180deg, #00c8ff, #ff4d6d, #00ff9d, #00c8ff);
+      border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      position:relative;
     }
-    .logo-icon {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
+    .logo-badge::after {
+      content:'';
+      position:absolute; inset:2px;
+      background:var(--bg);
+      border-radius:8px;
     }
-    .logo-icon svg { width: 20px; height: 20px; fill: white; }
-    .logo-text {
-      font-family: var(--font-mono);
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+    .logo-badge svg { z-index:1; width:22px; height:22px; }
+    .logo-name {
+      font-family: var(--font-sans);
+      font-weight:900;
+      font-size:20px;
+      letter-spacing:2px;
+      text-transform:uppercase;
     }
-    .logo-text span { color: var(--accent); }
-    .status-pill {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      transition: all 0.3s;
+    .logo-name em { color:var(--accent); font-style:normal; }
+
+    .status-badge {
+      display:flex; align-items:center; gap:7px;
+      padding:7px 14px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:100px;
+      font-family:var(--font-mono);
+      font-size:11px;
+      color:var(--muted);
+      transition:all .3s;
     }
-    .status-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--muted);
-      transition: all 0.3s;
-    }
-    .status-pill.active { color: var(--green); border-color: rgba(0,214,143,0.3); }
-    .status-pill.active .status-dot {
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-      animation: pulse-dot 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse-dot {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.8); }
+    .status-badge.live { color:var(--accent3); border-color:rgba(0,255,157,.3); }
+    .status-badge.live .sdot { background:var(--accent3); box-shadow:0 0 8px var(--accent3); animation:blink 1.2s ease infinite; }
+    .sdot { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:all .3s; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── RADAR ── */
+    .radar-wrap {
+      position:relative;
+      width:300px; height:300px;
+      margin: 8px auto 20px;
     }
 
-    /* ── COMPASS RING ── */
-    .compass-wrap {
-      position: relative;
-      width: 280px;
-      height: 280px;
-      margin: 12px auto 24px;
+    #radarCanvas {
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      border-radius:50%;
     }
 
-    .compass-outer {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, var(--surface) 100%);
-      overflow: hidden;
+    /* Needle */
+    .needle-pivot {
+      position:absolute;
+      top:50%; left:50%;
+      width:0; height:0;
+      transform-origin:0 0;
+      transition: transform .15s cubic-bezier(.34,1.56,.64,1);
     }
-
-    /* Rotating sweep line */
-    .sweep-canvas {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-    }
-
-    /* Direction ticks */
-    .tick-ring {
-      position: absolute;
-      inset: 8px;
-      border-radius: 50%;
-    }
-
-    /* Cardinal labels */
-    .cardinal {
-      position: absolute;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      transform: translate(-50%, -50%);
-      letter-spacing: 1px;
-    }
-    .cardinal.N { top: 18px; left: 50%; color: var(--accent); }
-    .cardinal.S { bottom: 4px; left: 50%; }
-    .cardinal.E { right: 4px; top: 50%; }
-    .cardinal.W { left: 18px; top: 50%; }
-
-    /* Inner circle */
-    .compass-inner {
-      position: absolute;
-      inset: 40px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-    }
-
-    /* Sonar rings */
-    .sonar-ring {
-      position: absolute;
-      border-radius: 50%;
-      border: 1px solid rgba(0,229,255,0.15);
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-    }
-    .sonar-ring.active {
-      animation: sonar-expand 2s ease-out infinite;
-    }
-    .sonar-ring:nth-child(2) { animation-delay: 0.7s; }
-    .sonar-ring:nth-child(3) { animation-delay: 1.4s; }
-    @keyframes sonar-expand {
-      0% { width: 40px; height: 40px; opacity: 0.8; border-color: rgba(0,229,255,0.4); }
-      100% { width: 180px; height: 180px; opacity: 0; border-color: rgba(0,229,255,0); }
-    }
-
-    /* Pointer needle */
-    .needle-group {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform-origin: 0 0;
-      transition: transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    .needle {
-      position: absolute;
-      width: 3px;
-      background: linear-gradient(to top, transparent, var(--accent));
-      bottom: 0;
-      left: -1.5px;
-      border-radius: 3px 3px 0 0;
-      height: 90px;
+    .needle-arm {
+      position:absolute;
+      bottom:0; left:-2px;
+      width:4px; height:115px;
+      border-radius:4px 4px 0 0;
+      background: linear-gradient(to top, transparent 0%, rgba(0,200,255,.3) 30%, var(--accent) 100%);
+      filter: drop-shadow(0 0 8px var(--accent));
       transform-origin: bottom center;
-      filter: drop-shadow(0 0 6px var(--accent));
     }
-    .needle-tip {
-      position: absolute;
-      width: 10px; height: 10px;
-      background: var(--accent);
-      border-radius: 50%;
-      top: -5px;
-      left: -5px;
-      box-shadow: 0 0 12px var(--accent), 0 0 24px rgba(0,229,255,0.4);
+    .needle-tip-dot {
+      position:absolute;
+      top:-6px; left:-6px;
+      width:12px; height:12px;
+      background:var(--accent);
+      border-radius:50%;
+      box-shadow:0 0 16px var(--accent), 0 0 32px rgba(0,200,255,.4);
     }
-    .needle-base {
-      position: absolute;
-      width: 14px; height: 14px;
-      background: var(--surface2);
-      border: 2px solid var(--accent2);
-      border-radius: 50%;
-      bottom: -7px;
-      left: -7px;
+    .needle-base-dot {
+      position:absolute;
+      bottom:-8px; left:-8px;
+      width:16px; height:16px;
+      background:var(--surface2);
+      border:2px solid var(--accent2);
+      border-radius:50%;
+      box-shadow:0 0 8px var(--accent2);
     }
 
-    /* Center cross-hair dot */
-    .center-dot {
-      width: 8px; height: 8px;
-      background: var(--accent2);
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--accent2);
-      z-index: 10;
+    /* Labels on radar */
+    .rlabel {
+      position:absolute;
+      font-family:var(--font-mono);
+      font-size:10px;
+      font-weight:700;
+      color:var(--muted);
+      transform:translate(-50%,-50%);
+      letter-spacing:1.5px;
+    }
+    .rlabel.top    { top:16px;  left:50%; color:var(--accent); }
+    .rlabel.bottom { bottom:2px; left:50%; }
+    .rlabel.left   { top:50%;   left:16px; }
+    .rlabel.right  { top:50%;   right:2px; }
+
+    /* ── ANGLE READOUT ── */
+    .readout {
+      text-align:center;
+      margin-bottom:18px;
+    }
+    .readout-num {
+      font-family:var(--font-mono);
+      font-size:60px;
+      font-weight:400;
+      line-height:1;
+      letter-spacing:-3px;
+      transition:color .3s;
+      color:var(--text);
+    }
+    .readout-num.hot { color:var(--accent); text-shadow:0 0 30px rgba(0,200,255,.5); }
+    .readout-deg { font-size:28px; color:var(--muted); }
+    .readout-sub { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+    .readout-dir {
+      font-size:15px; font-weight:600;
+      color:var(--accent3);
+      margin-top:8px; min-height:22px;
+      transition:all .3s;
     }
 
-    /* Confidence arc (drawn by canvas) */
-    #arcCanvas {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
+    /* ── CONFIDENCE BAR ── */
+    .conf-track {
+      height:4px;
+      background:var(--surface2);
+      border-radius:4px;
+      margin:0 20px 20px;
+      overflow:hidden;
+    }
+    .conf-fill {
+      height:100%;
+      border-radius:4px;
+      background:linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+      transition:width .3s;
+      width:0%;
     }
 
-    /* ── ANGLE DISPLAY ── */
-    .angle-display {
-      text-align: center;
-      margin-bottom: 20px;
+    /* ── STATS GRID ── */
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-bottom:18px;
     }
-    .angle-value {
-      font-family: var(--font-mono);
-      font-size: 52px;
-      font-weight: 700;
-      line-height: 1;
-      color: var(--text);
-      letter-spacing: -2px;
-      transition: color 0.3s;
+    .stat-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:12px 8px;
+      text-align:center;
+      transition:border-color .3s;
     }
-    .angle-value.hot { color: var(--accent); }
-    .angle-unit {
-      font-family: var(--font-mono);
-      font-size: 20px;
-      color: var(--muted);
+    .stat-card.lit { border-color:rgba(0,200,255,.4); }
+    .stat-lbl {
+      font-family:var(--font-mono);
+      font-size:9px;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:6px;
     }
-    .angle-label {
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-top: 4px;
+    .stat-val {
+      font-family:var(--font-mono);
+      font-size:17px;
+      font-weight:400;
+      color:var(--text);
     }
-    .direction-text {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
-      margin-top: 6px;
-      min-height: 20px;
-      transition: all 0.3s;
-    }
+    .stat-val.c-accent { color:var(--accent); }
+    .stat-val.c-green  { color:var(--accent3); }
+    .stat-val.c-warn   { color:var(--warn); }
 
-    /* ── METRICS GRID ── */
-    .metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 20px;
+    /* ── SPECTRUM ── */
+    .spectrum-wrap {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      margin-bottom:18px;
     }
-    .metric-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 10px;
-      text-align: center;
-      transition: border-color 0.3s;
+    .spectrum-hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:10px;
     }
-    .metric-card.highlight { border-color: rgba(0,229,255,0.3); }
-    .metric-label {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-family: var(--font-mono);
-      margin-bottom: 6px;
+    .spectrum-title {
+      font-family:var(--font-mono);
+      font-size:10px; letter-spacing:2px;
+      text-transform:uppercase; color:var(--muted);
     }
-    .metric-value {
-      font-family: var(--font-mono);
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
+    .mode-tag {
+      font-family:var(--font-mono);
+      font-size:9px;
+      padding:3px 8px;
+      border-radius:100px;
+      border:1px solid rgba(0,200,255,.2);
+      color:var(--accent);
     }
-    .metric-value.green { color: var(--green); }
-    .metric-value.accent { color: var(--accent); }
-    .metric-value.warn { color: #ffb347; }
+    #specCanvas { width:100%; height:70px; display:block; }
 
-    /* ── WAVEFORM ── */
-    .waveform-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-    .waveform-label {
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-family: var(--font-mono);
-      margin-bottom: 10px;
-    }
-    #waveCanvas {
-      width: 100%;
-      height: 60px;
-      display: block;
-    }
-
-    /* ── HISTORY LOG ── */
+    /* ── HISTORY ── */
     .history-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 24px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      margin-bottom:20px;
     }
-    .history-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
+    .history-hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:12px;
     }
     .history-title {
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-family: var(--font-mono);
+      font-family:var(--font-mono);
+      font-size:10px; letter-spacing:2px;
+      text-transform:uppercase; color:var(--muted);
     }
     .history-count {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--accent2);
+      font-family:var(--font-mono);
+      font-size:10px; color:var(--accent2);
     }
     .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 120px;
-      overflow-y: auto;
+      display:flex; flex-direction:column; gap:5px;
+      max-height:130px; overflow-y:auto;
     }
-    .history-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 6px 8px;
-      background: var(--surface2);
-      border-radius: 8px;
-      animation: fade-in 0.3s ease;
+    .h-row {
+      display:flex; align-items:center; gap:8px;
+      font-family:var(--font-mono);
+      font-size:11px;
+      padding:6px 8px;
+      background:var(--surface2);
+      border-radius:8px;
+      animation:fadeUp .25s ease;
     }
-    @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-    .history-time { color: var(--muted); flex-shrink: 0; }
-    .history-angle { color: var(--accent); font-weight: 700; min-width: 48px; }
-    .history-conf { color: var(--muted); font-size: 10px; margin-left: auto; }
-    .history-bar {
-      height: 3px;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--accent2), var(--accent));
-      min-width: 20px;
-      transition: width 0.3s;
-    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .h-time { color:var(--muted); flex-shrink:0; }
+    .h-angle { color:var(--accent); font-weight:700; min-width:52px; }
+    .h-bar-wrap { flex:1; height:3px; background:var(--surface); border-radius:2px; overflow:hidden; }
+    .h-bar { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent3)); border-radius:2px; }
+    .h-conf { color:var(--muted); font-size:10px; }
+    .empty-hint { text-align:center; color:var(--muted); font-size:12px; font-family:var(--font-mono); padding:14px 0; }
 
-    /* ── BUTTON ── */
-    .btn-start {
-      width: 100%;
-      padding: 18px;
-      font-size: 16px;
-      font-weight: 600;
-      font-family: var(--font-sans);
-      letter-spacing: 0.3px;
-      background: linear-gradient(135deg, var(--accent2), #5b21b6);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .btn-start::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .btn-start:hover::before { opacity: 1; }
-    .btn-start:active { transform: scale(0.98); }
-    .btn-start:disabled {
-      background: var(--surface2);
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
+    /* ── BUTTONS ── */
+    .btn-row { display:flex; gap:10px; margin-bottom:10px; }
 
-    .btn-clear {
-      width: 100%;
-      padding: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: var(--font-sans);
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.2s;
+    .btn-primary {
+      flex:1;
+      padding:17px;
+      font-family:var(--font-sans);
+      font-size:15px; font-weight:700;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      background:linear-gradient(135deg,#0066ff,#00c8ff);
+      color:#fff; border:none;
+      border-radius:var(--radius);
+      cursor:pointer;
+      transition:all .2s;
+      position:relative; overflow:hidden;
     }
-    .btn-clear:active { background: var(--surface); }
+    .btn-primary:active { transform:scale(.97); }
+    .btn-primary:disabled { background:var(--surface2); color:var(--muted); border:1px solid var(--border); cursor:default; }
+    .btn-primary.stop { background:linear-gradient(135deg,#c0392b,#ff4d6d); }
 
-    /* ── SAVE FLASH ── */
-    .save-flash {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,214,143,0.15);
-      border: 1px solid rgba(0,214,143,0.3);
-      color: var(--green);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 8px 14px;
-      border-radius: 100px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s;
-      pointer-events: none;
-      z-index: 100;
+    .btn-secondary {
+      padding:17px 20px;
+      font-family:var(--font-sans);
+      font-size:14px; font-weight:600;
+      color:var(--muted);
+      background:transparent;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      cursor:pointer;
+      transition:all .2s;
     }
-    .save-flash.show { opacity: 1; transform: translateY(0); }
+    .btn-secondary:active { background:var(--surface); }
 
-    /* Scrollbar */
-    .history-list::-webkit-scrollbar { width: 3px; }
-    .history-list::-webkit-scrollbar-track { background: transparent; }
-    .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .empty-state {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      font-family: var(--font-mono);
-      padding: 16px 0;
+    /* ── SAVE TOAST ── */
+    .toast {
+      position:fixed; top:20px; right:20px;
+      background:rgba(0,255,157,.12);
+      border:1px solid rgba(0,255,157,.3);
+      color:var(--accent3);
+      font-family:var(--font-mono);
+      font-size:11px;
+      padding:8px 14px;
+      border-radius:100px;
+      display:flex; align-items:center; gap:6px;
+      opacity:0; transform:translateY(-8px);
+      transition:all .3s;
+      pointer-events:none; z-index:1000;
     }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    /* ── NOTICE ── */
+    .notice {
+      background:rgba(255,184,48,.08);
+      border:1px solid rgba(255,184,48,.2);
+      border-radius:var(--radius);
+      padding:12px 14px;
+      font-size:12px;
+      color:var(--warn);
+      line-height:1.6;
+      margin-bottom:18px;
+      font-family:var(--font-mono);
+    }
+    .notice strong { display:block; margin-bottom:4px; letter-spacing:1px; }
+
+    .history-list::-webkit-scrollbar { width:3px; }
+    .history-list::-webkit-scrollbar-track { background:transparent; }
+    .history-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
   </style>
 </head>
 <body>
 
-<div class="save-flash" id="saveFlash">
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+<div class="toast" id="toast">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
   Kaydedildi
 </div>
 
@@ -495,461 +402,598 @@
   <!-- HEADER -->
   <div class="header">
     <div class="logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 3c-1.2 5.4-2 8-2 12a2 2 0 0 0 4 0c0-4-.8-6.6-2-12zm-6.5 5.5a10 10 0 0 0 0 7M18.5 8.5a10 10 0 0 1 0 7"/></svg>
+      <div class="logo-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/>
+          <path d="M3.5 3.5a13 13 0 0 0 0 17M20.5 3.5a13 13 0 0 1 0 17"/>
+        </svg>
       </div>
-      <div class="logo-text">Sonic<span>Track</span></div>
+      <div class="logo-name">Sonic<em>Track</em></div>
     </div>
-    <div class="status-pill" id="statusPill">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Hazır</span>
+    <div class="status-badge" id="statusBadge">
+      <div class="sdot" id="sdot"></div>
+      <span id="statusTxt">Hazır</span>
     </div>
   </div>
 
-  <!-- COMPASS -->
-  <div class="compass-wrap">
-    <div class="compass-outer" id="compassOuter">
-      <!-- Sonar rings -->
-      <div class="sonar-ring" id="sonar1"></div>
-      <div class="sonar-ring" id="sonar2"></div>
-      <div class="sonar-ring" id="sonar3"></div>
-
-      <!-- Arc canvas -->
-      <canvas id="arcCanvas" width="280" height="280"></canvas>
-
-      <!-- Tick marks -->
-      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 280 280">
-        <g id="ticks"></g>
-      </svg>
-
-      <!-- Cardinal labels -->
-      <div class="cardinal N">N</div>
-      <div class="cardinal S">S</div>
-      <div class="cardinal E">E</div>
-      <div class="cardinal W">W</div>
-
-      <!-- Inner ring -->
-      <div class="compass-inner">
-        <div class="center-dot"></div>
-        <!-- Needle -->
-        <div class="needle-group" id="needleGroup" style="transform: rotate(0deg);">
-          <div class="needle">
-            <div class="needle-tip"></div>
-          </div>
-          <div class="needle-base"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sweep canvas (sonar effect) -->
-    <canvas class="sweep-canvas" id="sweepCanvas" width="280" height="280"></canvas>
+  <!-- NOTICE -->
+  <div class="notice">
+    <strong>⚠ TEK MİKROFON MODU</strong>
+    Telefon mikrofonu genellikle tek kanallı çalışır. Bu uygulama ses enerjisi, frekans değişimi ve genlik analizi ile yön tahmin eder. En iyi sonuç için farklı yönlerden net ses üretin.
   </div>
 
-  <!-- ANGLE -->
-  <div class="angle-display">
+  <!-- RADAR -->
+  <div class="radar-wrap">
+    <canvas id="radarCanvas" width="300" height="300"></canvas>
+
+    <div class="needle-pivot" id="needlePivot">
+      <div class="needle-arm">
+        <div class="needle-tip-dot"></div>
+      </div>
+      <div class="needle-base-dot"></div>
+    </div>
+
+    <div class="rlabel top">SOL</div>
+    <div class="rlabel bottom">SAĞ</div>
+    <div class="rlabel left">ÖN</div>
+    <div class="rlabel right">ARKA</div>
+  </div>
+
+  <!-- READOUT -->
+  <div class="readout">
     <div>
-      <span class="angle-value" id="angleVal">--</span>
-      <span class="angle-unit">°</span>
+      <span class="readout-num" id="angleNum">--</span><span class="readout-deg">°</span>
     </div>
-    <div class="angle-label">Ses Açısı</div>
-    <div class="direction-text" id="dirText">—</div>
+    <div class="readout-sub">Ses Açısı</div>
+    <div class="readout-dir" id="dirLabel">—</div>
   </div>
 
-  <!-- METRICS -->
-  <div class="metrics">
-    <div class="metric-card" id="metricConf">
-      <div class="metric-label">Güven</div>
-      <div class="metric-value accent" id="confVal">—</div>
+  <!-- CONFIDENCE BAR -->
+  <div class="conf-track">
+    <div class="conf-fill" id="confFill"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card" id="sc1">
+      <div class="stat-lbl">Güven</div>
+      <div class="stat-val c-accent" id="sv1">—</div>
     </div>
-    <div class="metric-card" id="metricDelay">
-      <div class="metric-label">Gecikme</div>
-      <div class="metric-value" id="delayVal">—</div>
+    <div class="stat-card" id="sc2">
+      <div class="stat-lbl">Seviye</div>
+      <div class="stat-val" id="sv2">—</div>
     </div>
-    <div class="metric-card" id="metricCount">
-      <div class="metric-label">Kayıt</div>
-      <div class="metric-value green" id="countVal">0</div>
+    <div class="stat-card" id="sc3">
+      <div class="stat-lbl">Kayıt</div>
+      <div class="stat-val c-green" id="sv3">0</div>
     </div>
   </div>
 
-  <!-- WAVEFORM -->
-  <div class="waveform-wrap">
-    <div class="waveform-label">Dalga Formu — Sol / Sağ Kanal</div>
-    <canvas id="waveCanvas" height="60"></canvas>
+  <!-- SPECTRUM -->
+  <div class="spectrum-wrap">
+    <div class="spectrum-hdr">
+      <div class="spectrum-title">Frekans Spektrumu</div>
+      <div class="mode-tag" id="modeTag">MONO</div>
+    </div>
+    <canvas id="specCanvas" height="70"></canvas>
   </div>
 
   <!-- HISTORY -->
   <div class="history-wrap">
-    <div class="history-header">
+    <div class="history-hdr">
       <div class="history-title">Algılama Geçmişi</div>
-      <div class="history-count" id="histCount">0 kayıt</div>
+      <div class="history-count" id="histCnt">0 kayıt</div>
     </div>
     <div class="history-list" id="histList">
-      <div class="empty-state">Henüz kayıt yok</div>
+      <div class="empty-hint">Henüz kayıt yok</div>
     </div>
   </div>
 
   <!-- BUTTONS -->
-  <button class="btn-start" id="btnStart" onclick="startMic()">Mikrofonu Başlat</button>
-  <button class="btn-clear" onclick="clearHistory()">Geçmişi Temizle</button>
+  <div class="btn-row">
+    <button class="btn-primary" id="btnMain" onclick="toggleMic()">▶ Mikrofonu Başlat</button>
+    <button class="btn-secondary" onclick="clearAll()">Temizle</button>
+  </div>
 
 </div>
 
 <script>
-// ── STATE ──
-let audioCtx, analyserL, analyserR, sourceNode;
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let audioCtx, analyser, source, stream;
 let isRunning = false;
-let animFrame;
-let historyData = [];
+let loopTimer = null;
 let totalSaved = 0;
-let sweepAngle = 0;
-let currentAngle = 90;
-let smoothedAngle = 90;
-let smoothedConf = 0;
+let historyData = [];
 
-// ── DRAW TICKS ──
-(function drawTicks() {
-  const g = document.getElementById('ticks');
-  const cx = 140, cy = 140, r = 130;
-  for (let i = 0; i < 72; i++) {
-    const deg = (i * 5) - 90;
+// Smoothed values
+let smoothAngle  = 90;
+let smoothConf   = 0;
+let smoothLevel  = 0;
+
+// Ring buffer for angle history (direction stability)
+const ANGLE_BUF_SIZE = 8;
+let angleBuf = Array(ANGLE_BUF_SIZE).fill(90);
+let angleBufIdx = 0;
+
+// For delta-based direction estimation
+let prevFreqData = null;
+let prevRMS = 0;
+let lastLogTs = 0;
+
+// Canvas references
+const radarCvs = document.getElementById('radarCanvas');
+const radarCtx = radarCvs.getContext('2d');
+const specCvs  = document.getElementById('specCanvas');
+const specCtx  = specCvs.getContext('2d');
+
+// ══════════════════════════════════════════════
+//  RADAR DRAW
+// ══════════════════════════════════════════════
+let sweepRad = 0;
+let glowAngle = 90;
+
+function drawRadar() {
+  const W = 300, H = 300, cx = W/2, cy = H/2, R = 130;
+  radarCtx.clearRect(0, 0, W, H);
+
+  // Background glow
+  const bgGrad = radarCtx.createRadialGradient(cx,cy,0,cx,cy,R);
+  bgGrad.addColorStop(0, 'rgba(0,200,255,0.06)');
+  bgGrad.addColorStop(1, 'rgba(0,200,255,0)');
+  radarCtx.fillStyle = bgGrad;
+  radarCtx.beginPath();
+  radarCtx.arc(cx,cy,R,0,Math.PI*2);
+  radarCtx.fill();
+
+  // Rings
+  [0.33, 0.66, 1].forEach(f => {
+    radarCtx.beginPath();
+    radarCtx.arc(cx, cy, R*f, 0, Math.PI*2);
+    radarCtx.strokeStyle = `rgba(0,200,255,${f === 1 ? 0.25 : 0.1})`;
+    radarCtx.lineWidth = f === 1 ? 1.5 : 0.8;
+    radarCtx.stroke();
+  });
+
+  // Cross-hairs
+  radarCtx.strokeStyle = 'rgba(0,200,255,0.12)';
+  radarCtx.lineWidth = 0.8;
+  [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2]) => {
+    radarCtx.beginPath(); radarCtx.moveTo(x1,y1); radarCtx.lineTo(x2,y2); radarCtx.stroke();
+  });
+
+  // Tick marks
+  for (let i=0; i<72; i++) {
+    const deg = i*5 - 90;
     const rad = deg * Math.PI / 180;
-    const isMajor = i % 9 === 0;
-    const isMid = i % 3 === 0;
-    const len = isMajor ? 14 : isMid ? 9 : 5;
-    const x1 = cx + r * Math.cos(rad);
-    const y1 = cy + r * Math.sin(rad);
-    const x2 = cx + (r - len) * Math.cos(rad);
-    const y2 = cy + (r - len) * Math.sin(rad);
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('stroke', isMajor ? 'rgba(0,229,255,0.5)' : 'rgba(255,255,255,0.12)');
-    line.setAttribute('stroke-width', isMajor ? '1.5' : '0.8');
-    g.appendChild(line);
+    const major = i%9===0, mid = i%3===0;
+    const len = major ? 14 : mid ? 9 : 5;
+    const x1 = cx + R*Math.cos(rad), y1 = cy + R*Math.sin(rad);
+    const x2 = cx + (R-len)*Math.cos(rad), y2 = cy + (R-len)*Math.sin(rad);
+    radarCtx.beginPath(); radarCtx.moveTo(x1,y1); radarCtx.lineTo(x2,y2);
+    radarCtx.strokeStyle = major ? 'rgba(0,200,255,0.5)' : 'rgba(255,255,255,0.1)';
+    radarCtx.lineWidth = major ? 1.5 : 0.7;
+    radarCtx.stroke();
   }
-})();
 
-// ── SWEEP SONAR ──
-const sweepCvs = document.getElementById('sweepCanvas');
-const sweepCtx = sweepCvs.getContext('2d');
-
-function drawSweep() {
-  sweepCtx.clearRect(0, 0, 280, 280);
-  if (!isRunning) { requestAnimationFrame(drawSweep); return; }
-  sweepAngle += 2;
-  const cx = 140, cy = 140, rad = sweepAngle * Math.PI / 180;
-  const grad = sweepCtx.createConicalGradient ? null : null;
-  // Draw sweep arc
-  sweepCtx.save();
-  sweepCtx.beginPath();
-  sweepCtx.moveTo(cx, cy);
-  sweepCtx.arc(cx, cy, 130, rad - 0.7, rad);
-  sweepCtx.closePath();
-  const fill = sweepCtx.createLinearGradient(
-    cx + Math.cos(rad - 0.35) * 65, cy + Math.sin(rad - 0.35) * 65,
-    cx, cy
-  );
-  fill.addColorStop(0, 'rgba(0,229,255,0.15)');
-  fill.addColorStop(1, 'rgba(0,229,255,0)');
-  sweepCtx.fillStyle = fill;
-  sweepCtx.fill();
-  sweepCtx.restore();
   // Sweep line
-  sweepCtx.beginPath();
-  sweepCtx.moveTo(cx, cy);
-  sweepCtx.lineTo(cx + 130 * Math.cos(rad), cy + 130 * Math.sin(rad));
-  sweepCtx.strokeStyle = 'rgba(0,229,255,0.5)';
-  sweepCtx.lineWidth = 1.5;
-  sweepCtx.stroke();
-  requestAnimationFrame(drawSweep);
-}
-drawSweep();
-
-// ── ARC CONFIDENCE ──
-const arcCvs = document.getElementById('arcCanvas');
-const arcCtx = arcCvs.getContext('2d');
-
-function drawArc(angleDeg, confidence) {
-  arcCtx.clearRect(0, 0, 280, 280);
-  if (confidence < 0.05) return;
-  const cx = 140, cy = 140, r = 118;
-  const span = (Math.PI / 6) * confidence;
-  const startRad = ((angleDeg - 90) * Math.PI / 180) - span;
-  const endRad = ((angleDeg - 90) * Math.PI / 180) + span;
-  arcCtx.beginPath();
-  arcCtx.arc(cx, cy, r, startRad, endRad);
-  const alpha = Math.min(0.6, confidence);
-  arcCtx.strokeStyle = `rgba(0,229,255,${alpha})`;
-  arcCtx.lineWidth = 3;
-  arcCtx.lineCap = 'round';
-  arcCtx.stroke();
-}
-
-// ── WAVEFORM ──
-const waveCvs = document.getElementById('waveCanvas');
-const waveCtx = waveCvs.getContext('2d');
-let dataLBuffer = new Float32Array(512);
-let dataRBuffer = new Float32Array(512);
-
-function drawWave() {
-  const W = waveCvs.offsetWidth * window.devicePixelRatio || 380;
-  const H = 120;
-  waveCvs.width = W;
-  waveCvs.height = H;
-  waveCtx.clearRect(0, 0, W, H);
-  const mid = H / 2;
-  const step = W / dataLBuffer.length;
-
-  // Left channel (cyan)
-  waveCtx.beginPath();
-  for (let i = 0; i < dataLBuffer.length; i++) {
-    const x = i * step;
-    const y = mid + dataLBuffer[i] * (H * 0.4);
-    i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+  if (isRunning) {
+    sweepRad += 0.025;
+    const sweep = sweepRad;
+    radarCtx.save();
+    radarCtx.beginPath();
+    radarCtx.moveTo(cx,cy);
+    radarCtx.arc(cx,cy,R, sweep-0.8, sweep);
+    radarCtx.closePath();
+    const sg = radarCtx.createLinearGradient(
+      cx+Math.cos(sweep-0.4)*R/2, cy+Math.sin(sweep-0.4)*R/2, cx, cy
+    );
+    sg.addColorStop(0,'rgba(0,200,255,0.18)');
+    sg.addColorStop(1,'rgba(0,200,255,0)');
+    radarCtx.fillStyle = sg;
+    radarCtx.fill();
+    radarCtx.beginPath();
+    radarCtx.moveTo(cx,cy);
+    radarCtx.lineTo(cx+R*Math.cos(sweep), cy+R*Math.sin(sweep));
+    radarCtx.strokeStyle='rgba(0,200,255,0.6)';
+    radarCtx.lineWidth=1.5; radarCtx.stroke();
+    radarCtx.restore();
   }
-  waveCtx.strokeStyle = 'rgba(0,229,255,0.7)';
-  waveCtx.lineWidth = 1.5;
-  waveCtx.stroke();
 
-  // Right channel (purple)
-  waveCtx.beginPath();
-  for (let i = 0; i < dataRBuffer.length; i++) {
-    const x = i * step;
-    const y = mid + dataRBuffer[i] * (H * 0.4);
-    i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+  // Direction highlight arc
+  if (smoothConf > 0.05) {
+    const targetRad = (smoothAngle - 90) * Math.PI / 180;
+    const spread = (Math.PI / 5) * smoothConf;
+    const grad2 = radarCtx.createLinearGradient(cx,cy, cx+R*Math.cos(targetRad), cy+R*Math.sin(targetRad));
+    grad2.addColorStop(0, 'rgba(0,200,255,0)');
+    grad2.addColorStop(1, `rgba(0,200,255,${smoothConf * 0.35})`);
+    radarCtx.beginPath();
+    radarCtx.moveTo(cx,cy);
+    radarCtx.arc(cx,cy,R, targetRad-spread, targetRad+spread);
+    radarCtx.closePath();
+    radarCtx.fillStyle = grad2;
+    radarCtx.fill();
+    // Arc stroke
+    radarCtx.beginPath();
+    radarCtx.arc(cx,cy,R*0.92, targetRad-spread*0.5, targetRad+spread*0.5);
+    radarCtx.strokeStyle = `rgba(0,200,255,${smoothConf*0.8})`;
+    radarCtx.lineWidth=2.5; radarCtx.stroke();
   }
-  waveCtx.strokeStyle = 'rgba(124,58,237,0.7)';
-  waveCtx.lineWidth = 1.5;
-  waveCtx.stroke();
+
+  // Center dot
+  radarCtx.beginPath();
+  radarCtx.arc(cx,cy,5,0,Math.PI*2);
+  radarCtx.fillStyle='var(--accent2)';
+  radarCtx.fill();
+
+  requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+// ══════════════════════════════════════════════
+//  NEEDLE
+// ══════════════════════════════════════════════
+function updateNeedle(angle) {
+  const rotate = angle - 90;
+  document.getElementById('needlePivot').style.transform = `rotate(${rotate}deg)`;
 }
 
-// ── DIRECTION TEXT ──
-function getDirectionLabel(angle) {
-  if (angle < 15) return 'Sol Ön';
-  if (angle < 40) return 'Sol';
-  if (angle < 70) return 'Sol Arka';
-  if (angle < 110) return angle < 90 ? 'Doğrudan Karşı ◀' : 'Doğrudan Karşı ▶';
-  if (angle < 140) return 'Sağ Arka';
-  if (angle < 165) return 'Sağ';
-  return 'Sağ Ön';
+// ══════════════════════════════════════════════
+//  SPECTRUM
+// ══════════════════════════════════════════════
+function drawSpectrum(freqData) {
+  const W = specCvs.offsetWidth * (window.devicePixelRatio || 1);
+  const H = 140;
+  if (specCvs.width !== W) { specCvs.width = W; specCvs.height = H; }
+  specCtx.clearRect(0,0,W,H);
+
+  if (!freqData) return;
+  const bins = Math.min(freqData.length, 128);
+  const bw = W / bins;
+
+  for (let i=0; i<bins; i++) {
+    const norm = (freqData[i] + 140) / 140;
+    const h = norm * H;
+    const hue = 180 + norm * 60;
+    specCtx.fillStyle = `hsla(${hue},100%,60%,0.8)`;
+    specCtx.fillRect(i*bw, H-h, bw-1, h);
+  }
 }
 
-// ── NEEDLE UPDATE ──
-function updateNeedle(angleDeg, confidence) {
-  // Smooth the angle
-  const diff = angleDeg - smoothedAngle;
-  smoothedAngle += diff * 0.25;
-  smoothedConf += (confidence - smoothedConf) * 0.2;
+// ══════════════════════════════════════════════
+//  DIRECTION ENGINE (Mono-mode)
+//  Uses multiple cues:
+//   1. Spectral centroid shift (high freq → closer/front)
+//   2. RMS change asymmetry (left-right phantom via energy delta)
+//   3. Spectral flux (rapid changes hint at angle)
+//   4. Low-freq ratio (bass-heavy → rear/far)
+// ══════════════════════════════════════════════
+function analyzeDirection(freqData, timeData) {
+  const N = freqData.length;
 
-  const rotate = smoothedAngle - 90;
-  document.getElementById('needleGroup').style.transform = `rotate(${rotate}deg)`;
-  document.getElementById('angleVal').textContent = Math.round(smoothedAngle);
+  // ── RMS ──
+  let rms = 0;
+  for (let i=0; i<timeData.length; i++) rms += timeData[i]*timeData[i];
+  rms = Math.sqrt(rms / timeData.length);
+  smoothLevel += (rms - smoothLevel) * 0.2;
 
-  const confPct = Math.round(smoothedConf * 100);
-  document.getElementById('confVal').textContent = confPct + '%';
+  // Energy gate — only process if loud enough
+  if (rms < 0.01) return null;
 
-  const confCard = document.getElementById('metricConf');
-  confCard.classList.toggle('highlight', smoothedConf > 0.4);
+  // ── SPECTRAL CENTROID ──
+  // Higher centroid → sound coming from front/closer
+  // Lower centroid → sound from rear/farther
+  let wSum = 0, sum = 0;
+  for (let i=0; i<N; i++) {
+    const mag = Math.pow(10, freqData[i]/20);
+    wSum += i * mag;
+    sum  += mag;
+  }
+  const centroid = sum > 0 ? wSum/sum : N/2;
+  const centroidNorm = centroid / N; // 0..1
 
-  document.getElementById('angleVal').classList.toggle('hot', smoothedConf > 0.3);
-  document.getElementById('dirText').textContent = getDirectionLabel(smoothedAngle);
+  // ── SPECTRAL FLUX (frame-to-frame change) ──
+  let flux = 0;
+  let fluxL = 0, fluxR = 0;
+  if (prevFreqData) {
+    const mid = Math.floor(N/2);
+    for (let i=0; i<N; i++) {
+      const d = freqData[i] - prevFreqData[i];
+      const pos = Math.max(0, d);
+      if (i < mid) fluxL += pos;
+      else fluxR += pos;
+      flux += pos;
+    }
+  }
+  prevFreqData = new Float32Array(freqData);
 
-  drawArc(smoothedAngle, smoothedConf);
-  drawWave();
+  // ── LOW-FREQ RATIO ──
+  // High low-freq → muffled → likely rear
+  let lowE = 0, highE = 0;
+  const lowCut = Math.floor(N * 0.15);
+  for (let i=0; i<N; i++) {
+    const mag = Math.pow(10, freqData[i]/20);
+    if (i < lowCut) lowE += mag;
+    else highE += mag;
+  }
+  const lowRatio = lowE / (lowE + highE + 0.001);
+
+  // ── RMS DELTA ──
+  const rmsDelta = rms - prevRMS;
+  prevRMS = rms;
+
+  // ══ COMBINE CUES → ANGLE ESTIMATE ══
+  // Base: centroid maps high→left(0°), low→right(180°)
+  // but phones vary — we use relative changes instead
+  let angleCue = 90; // default: center
+
+  // Cue 1: Spectral centroid
+  // High centroid (bright sound) → treat as coming slightly from one side
+  const centroidAngle = 90 + (centroidNorm - 0.5) * 120;
+
+  // Cue 2: Flux asymmetry — if left-band changes more, lean left
+  const fluxAsymmetry = flux > 0 ? (fluxL - fluxR) / (fluxL + fluxR + 0.001) : 0;
+  const fluxAngle = 90 + fluxAsymmetry * 70;
+
+  // Cue 3: Low ratio — high low content → more rear (larger angle toward right/rear)
+  const lowAngle = 90 + (lowRatio - 0.3) * 80;
+
+  // Cue 4: RMS spike direction — rapid rise from quiet suggests new source
+  const rmsAngle = rmsDelta > 0.02 ? 90 + (centroidNorm - 0.5) * 100 : 90;
+
+  // Weighted combine
+  let w1=0.35, w2=0.3, w3=0.2, w4=0.15;
+  angleCue = centroidAngle*w1 + fluxAngle*w2 + lowAngle*w3 + rmsAngle*w4;
+
+  // Clamp
+  angleCue = Math.max(5, Math.min(175, angleCue));
+
+  // ── CONFIDENCE ──
+  // Confidence is high when:
+  // - RMS is high (loud sound)
+  // - Flux is significant (signal is changing)
+  // - Cues agree with each other
+  const cueSpread = Math.abs(centroidAngle - fluxAngle) / 180;
+  const conf = Math.min(1,
+    rms * 4 *
+    (1 - cueSpread * 0.5) *
+    Math.min(1, flux * 0.1 + 0.3)
+  );
+
+  return { angle: angleCue, conf, rms };
 }
 
-// ── CROSS-CORRELATION ──
-function calcDirection() {
+// ══════════════════════════════════════════════
+//  DIRECTION TEXT
+// ══════════════════════════════════════════════
+function dirText(a) {
+  if (a < 20)  return '◀◀ Sol Ön';
+  if (a < 50)  return '◀ Sol';
+  if (a < 80)  return '↖ Sol Arka';
+  if (a < 100) return '↑ Karşı';
+  if (a < 130) return '↗ Sağ Arka';
+  if (a < 160) return 'Sağ ▶';
+  return 'Sağ Ön ▶▶';
+}
+
+// ══════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════
+function mainLoop() {
   if (!isRunning) return;
 
-  const BUF = analyserL.frequencyBinCount;
-  const dL = new Float32Array(BUF);
-  const dR = new Float32Array(BUF);
-  analyserL.getFloatTimeDomainData(dL);
-  analyserR.getFloatTimeDomainData(dR);
+  const FFT = analyser.frequencyBinCount;
+  const freqData = new Float32Array(FFT);
+  const timeData = new Float32Array(FFT);
+  analyser.getFloatFrequencyData(freqData);
+  analyser.getFloatTimeDomainData(timeData);
 
-  dataLBuffer = dL;
-  dataRBuffer = dR;
+  drawSpectrum(freqData);
 
-  // Energy gate
-  let energy = 0;
-  for (let i = 0; i < BUF; i++) energy += dL[i] * dL[i];
-  if (energy < 0.008) {
-    document.getElementById('statusText').textContent = 'Dinleniyor...';
-    return;
-  }
+  const result = analyzeDirection(freqData, timeData);
 
-  document.getElementById('statusText').textContent = 'Algılandı!';
+  if (result) {
+    // Push to ring buffer
+    angleBuf[angleBufIdx % ANGLE_BUF_SIZE] = result.angle;
+    angleBufIdx++;
+    // Median filter for stability
+    const sorted = [...angleBuf].sort((a,b)=>a-b);
+    const medAngle = sorted[Math.floor(ANGLE_BUF_SIZE/2)];
 
-  // GCC-PHAT inspired cross-correlation with wider search
-  const SEARCH = 20;
-  let maxCorr = -Infinity, bestDelay = 0;
-  for (let delay = -SEARCH; delay <= SEARCH; delay++) {
-    let corr = 0;
-    for (let i = SEARCH; i < BUF - SEARCH; i++) {
-      const ri = i + delay;
-      if (ri >= 0 && ri < BUF) corr += dL[i] * dR[ri];
+    // Smooth
+    const diff = medAngle - smoothAngle;
+    smoothAngle += diff * 0.2;
+    smoothConf  += (result.conf - smoothConf) * 0.2;
+    smoothLevel += (result.rms - smoothLevel) * 0.15;
+
+    // Update UI
+    updateNeedle(smoothAngle);
+    document.getElementById('angleNum').textContent = Math.round(smoothAngle);
+    document.getElementById('angleNum').classList.toggle('hot', smoothConf > 0.3);
+    document.getElementById('dirLabel').textContent = dirText(smoothAngle);
+    document.getElementById('confFill').style.width = Math.round(smoothConf*100) + '%';
+    document.getElementById('sv1').textContent = Math.round(smoothConf*100) + '%';
+    document.getElementById('sv2').textContent = (smoothLevel*100).toFixed(1) + ' dB';
+
+    const s1 = document.getElementById('sc1');
+    s1.classList.toggle('lit', smoothConf > 0.3);
+
+    document.getElementById('statusTxt').textContent = result.rms > 0.01 ? 'Algılandı!' : 'Dinleniyor...';
+
+    // Log strong events
+    if (smoothConf > 0.2 && result.rms > 0.02) {
+      const now = Date.now();
+      if (now - lastLogTs > 700) {
+        lastLogTs = now;
+        logEntry(smoothAngle, smoothConf);
+      }
     }
-    if (corr > maxCorr) { maxCorr = corr; bestDelay = delay; }
+  } else {
+    document.getElementById('statusTxt').textContent = 'Sessiz...';
+    document.getElementById('confFill').style.width = '0%';
+    drawSpectrum(null);
   }
 
-  // Normalize confidence 0..1
-  const rawConf = Math.max(0, Math.min(1, maxCorr / (energy * 0.8)));
-
-  // Map delay → angle (0–180°)
-  let angle = 90 + (bestDelay * (90 / SEARCH));
-  angle = Math.max(0, Math.min(180, angle));
-
-  document.getElementById('delayVal').textContent = bestDelay + ' smp';
-  document.getElementById('delayVal').className = 'metric-value' +
-    (Math.abs(bestDelay) > 10 ? ' warn' : '');
-
-  updateNeedle(angle, rawConf);
-
-  // Only log strong, confident events
-  if (rawConf > 0.15 && Math.abs(bestDelay) > 1) {
-    logEvent(angle, rawConf, bestDelay);
-  }
+  loopTimer = setTimeout(mainLoop, 100); // 10 fps
 }
 
-// ── EVENT LOG ──
-let lastLogTime = 0;
-function logEvent(angle, conf, delay) {
-  const now = Date.now();
-  if (now - lastLogTime < 600) return;
-  lastLogTime = now;
-
-  const entry = {
-    time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    angle: Math.round(angle),
-    conf: Math.round(conf * 100),
-    delay
-  };
+// ══════════════════════════════════════════════
+//  HISTORY LOG
+// ══════════════════════════════════════════════
+function logEntry(angle, conf) {
+  const t = new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const entry = { time: t, angle: Math.round(angle), conf: Math.round(conf*100) };
   historyData.unshift(entry);
-  if (historyData.length > 30) historyData.pop();
+  if (historyData.length > 50) historyData.pop();
 
   totalSaved++;
-  document.getElementById('countVal').textContent = totalSaved;
-  document.getElementById('histCount').textContent = historyData.length + ' kayıt';
+  document.getElementById('sv3').textContent = totalSaved;
+  document.getElementById('histCnt').textContent = historyData.length + ' kayıt';
   renderHistory();
 
   // Save to Google Sheets
   if (typeof google !== 'undefined' && google.script) {
     google.script.run
-      .withSuccessHandler(function() { showSaveFlash(); })
-      .withFailureHandler(function(e) { console.warn('Kayıt hatası:', e); })
-      .kaydetSesYonu(entry.angle, (conf).toFixed(3), delay, entry.time);
+      .withSuccessHandler(() => showToast())
+      .withFailureHandler(e => console.warn('Kayıt hatası:', e))
+      .kaydetSesYonu(entry.angle, (conf).toFixed(3), 0, t);
   }
 }
 
 function renderHistory() {
   const list = document.getElementById('histList');
-  if (historyData.length === 0) {
-    list.innerHTML = '<div class="empty-state">Henüz kayıt yok</div>';
+  if (!historyData.length) {
+    list.innerHTML = '<div class="empty-hint">Henüz kayıt yok</div>';
     return;
   }
-  list.innerHTML = historyData.slice(0, 15).map(e => `
-    <div class="history-row">
-      <span class="history-time">${e.time}</span>
-      <span class="history-angle">${e.angle}°</span>
-      <div class="history-bar" style="width: ${e.conf}px;"></div>
-      <span class="history-conf">${e.conf}%</span>
+  list.innerHTML = historyData.slice(0,20).map(e => `
+    <div class="h-row">
+      <span class="h-time">${e.time}</span>
+      <span class="h-angle">${e.angle}°</span>
+      <div class="h-bar-wrap"><div class="h-bar" style="width:${e.conf}%"></div></div>
+      <span class="h-conf">${e.conf}%</span>
     </div>
   `).join('');
 }
 
-function clearHistory() {
+function clearAll() {
   historyData = [];
+  totalSaved = 0;
+  document.getElementById('sv3').textContent = '0';
+  document.getElementById('histCnt').textContent = '0 kayıt';
   renderHistory();
-  document.getElementById('histCount').textContent = '0 kayıt';
 }
 
-function showSaveFlash() {
-  const el = document.getElementById('saveFlash');
+function showToast() {
+  const el = document.getElementById('toast');
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 1800);
 }
 
-// ── SONAR ACTIVATE ──
-function activateSonar() {
-  document.getElementById('sonar1').classList.add('active');
-  document.getElementById('sonar2').classList.add('active');
-  document.getElementById('sonar3').classList.add('active');
+// ══════════════════════════════════════════════
+//  MIC CONTROL
+// ══════════════════════════════════════════════
+async function toggleMic() {
+  if (isRunning) {
+    stopMic();
+  } else {
+    await startMic();
+  }
 }
 
-// ── MAIN LOOP ──
-function mainLoop() {
-  calcDirection();
-  animFrame = setTimeout(mainLoop, 120); // ~8 fps is enough for audio localization
-}
-
-// ── MICROPHONE START ──
 async function startMic() {
-  if (isRunning) return;
-
-  const btn = document.getElementById('btnStart');
-  const pill = document.getElementById('statusPill');
+  const btn = document.getElementById('btnMain');
   btn.textContent = 'Bağlanıyor...';
   btn.disabled = true;
 
   if (!navigator.mediaDevices?.getUserMedia) {
     alert('Bu cihaz mikrofon erişimini desteklemiyor. HTTPS gereklidir.');
-    btn.disabled = false;
-    btn.textContent = 'Mikrofonu Başlat';
+    btn.disabled = false; btn.textContent = '▶ Mikrofonu Başlat';
     return;
   }
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        channelCount: { ideal: 2 },
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
-        sampleRate: 48000
+        sampleRate: { ideal: 48000 }
       }
     });
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-
-    // iOS Safari: context must be resumed after user gesture
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-    sourceNode = audioCtx.createMediaStreamSource(stream);
-    const splitter = audioCtx.createChannelSplitter(2);
-    sourceNode.connect(splitter);
+    // Check channel count
+    const track = stream.getAudioTracks()[0];
+    const settings = track.getSettings();
+    const isStereo = settings.channelCount >= 2;
+    document.getElementById('modeTag').textContent = isStereo ? 'STEREO' : 'MONO';
 
-    analyserL = audioCtx.createAnalyser();
-    analyserR = audioCtx.createAnalyser();
-    analyserL.fftSize = 2048;
-    analyserR.fftSize = 2048;
-    analyserL.smoothingTimeConstant = 0.3;
-    analyserR.smoothingTimeConstant = 0.3;
-
-    splitter.connect(analyserL, 0);
-    splitter.connect(analyserR, 1);
+    source  = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.4;
+    source.connect(analyser);
 
     isRunning = true;
-    activateSonar();
+    prevFreqData = null;
+    prevRMS = 0;
+    angleBuf.fill(90);
 
-    pill.classList.add('active');
-    document.getElementById('statusText').textContent = 'Aktif';
-    btn.textContent = '● Sistem Aktif';
-    btn.style.background = 'var(--surface2)';
-    btn.style.border = '1px solid rgba(0,229,255,0.3)';
-    btn.style.color = 'var(--accent)';
+    // UI
+    const badge = document.getElementById('statusBadge');
+    badge.classList.add('live');
+    document.getElementById('statusTxt').textContent = 'Aktif';
+    btn.textContent = '■ Durdur';
+    btn.classList.add('stop');
+    btn.disabled = false;
 
     mainLoop();
 
   } catch (err) {
-    alert('Mikrofon erişimi reddedildi.\n\nAyarlar > Gizlilik > Mikrofon bölümünden erişim izni verin.\n\nHata: ' + err.message);
+    alert('Mikrofon erişimi reddedildi.\n\nAyarlar > Gizlilik > Mikrofon bölümünden izin verin.\n\nHata: ' + err.message);
     btn.disabled = false;
-    btn.textContent = 'Mikrofonu Başlat';
+    btn.textContent = '▶ Mikrofonu Başlat';
   }
 }
 
-// Init wave draw
-drawWave();
+function stopMic() {
+  isRunning = false;
+  clearTimeout(loopTimer);
+
+  if (source) { try { source.disconnect(); } catch(e){} }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  analyser = null; source = null; prevFreqData = null;
+  smoothAngle = 90; smoothConf = 0; smoothLevel = 0;
+  angleBuf.fill(90);
+
+  const btn = document.getElementById('btnMain');
+  btn.textContent = '▶ Mikrofonu Başlat';
+  btn.classList.remove('stop');
+  btn.disabled = false;
+
+  const badge = document.getElementById('statusBadge');
+  badge.classList.remove('live');
+  document.getElementById('statusTxt').textContent = 'Hazır';
+  document.getElementById('angleNum').textContent = '--';
+  document.getElementById('angleNum').classList.remove('hot');
+  document.getElementById('dirLabel').textContent = '—';
+  document.getElementById('confFill').style.width = '0%';
+  document.getElementById('sv1').textContent = '—';
+  document.getElementById('sv2').textContent = '—';
+
+  updateNeedle(90);
+  drawSpectrum(null);
+}
+
+// Init
+drawSpectrum(null);
 </script>
 </body>
 </html>
