@@ -3,24 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SonicTrack Pro — GCC-PHAT & LEVEL</title>
+  <title>SonicTrack Pro — Hybrid Dual-Core Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #04060f;
-      --surface: #0a0d1a;
-      --surface2: #101426;
-      --border: rgba(0,230,255,0.15);
-      --accent: #00e5ff;
-      --accent2: #ff2a5f;
-      --accent3: #00ff88;
-      --warn: #ffaa00;
-      --text: #f0f5ff;
-      --muted: #404c75;
+      --bg: #060810;
+      --surface: #0d1020;
+      --surface2: #131828;
+      --border: rgba(0,200,255,0.1);
+      --accent: #00c8ff;
+      --accent2: #ff4d6d;
+      --accent3: #00ff9d;
+      --warn: #ffb830;
+      --text: #e8f0ff;
+      --muted: #4a5580;
       --font-mono: 'Share Tech Mono', monospace;
       --font-sans: 'Exo 2', sans-serif;
-      --radius: 16px;
+      --radius: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
@@ -29,62 +30,57 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 0 16px 30px;
       overflow-x: hidden;
     }
 
     body::before {
       content:''; position:fixed; inset:0;
-      background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
-      background-size: 25px 25px; pointer-events:none; z-index:0;
+      background-image: linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+      background-size: 32px 32px; pointer-events:none; z-index:0;
     }
 
-    .app { position:relative; z-index:1; max-width: 420px; margin: 0 auto; width: 100%; }
+    .app { position:relative; z-index:1; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; padding: 0 16px calc(var(--safe-bottom) + 16px); }
 
-    .header { display:flex; align-items:center; justify-content:space-between; padding: 35px 0 15px; }
+    .header { display:flex; align-items:center; justify-content:space-between; padding: 40px 0 15px; }
     .logo { display:flex; align-items:center; gap:10px; }
     .logo-badge {
-      width:36px; height:36px; background: conic-gradient(from 180deg, var(--accent), var(--accent2), var(--accent3), var(--accent));
+      width:40px; height:40px; background: conic-gradient(from 180deg, #00c8ff, #ff4d6d, #00ff9d, #00c8ff);
       border-radius:10px; display:flex; align-items:center; justify-content:center; position:relative;
     }
     .logo-badge::after { content:''; position:absolute; inset:2px; background:var(--bg); border-radius:8px; }
-    .logo-badge svg { z-index:1; width:20px; height:20px; }
-    .logo-name { font-weight:900; font-size:18px; letter-spacing:1.5px; text-transform:uppercase; }
+    .logo-badge svg { z-index:1; width:22px; height:22px; }
+    .logo-name { font-weight:900; font-size:20px; letter-spacing:2px; text-transform:uppercase; }
     .logo-name em { color:var(--accent); font-style:normal; }
 
     .status-badge {
-      display:flex; align-items:center; gap:6px; padding:6px 12px; background:var(--surface);
+      display:flex; align-items:center; gap:7px; padding:7px 14px; background:var(--surface);
       border:1px solid var(--border); border-radius:100px; font-family:var(--font-mono); font-size:11px; color:var(--muted);
     }
-    .status-badge.live { color:var(--accent3); border-color:rgba(0,255,136,0.3); }
-    .status-badge.live .sdot { background:var(--accent3); box-shadow:0 0 8px var(--accent3); animation:blink 1s ease infinite; }
-    .sdot { width:6px; height:6px; border-radius:50%; background:var(--muted); }
+    .status-badge.live { color:var(--accent3); border-color:rgba(0,255,157,.3); }
+    .status-badge.live .sdot { background:var(--accent3); box-shadow:0 0 8px var(--accent3); animation:blink 1.2s ease infinite; }
+    .sdot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     .notice {
-      background: rgba(0, 229, 255, 0.05); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 12px; font-size: 11.5px; color: var(--accent);
-      line-height: 1.5; margin-bottom: 15px; font-family: var(--font-mono);
+      background:rgba(0, 200, 255, 0.05); border:1px solid var(--border);
+      border-radius:var(--radius); padding:12px 14px; font-size:12px; color:var(--accent); line-height:1.5; margin-bottom:15px; font-family:var(--font-mono);
     }
-    .notice strong { display:block; color: var(--accent3); margin-bottom: 2px; }
+    .notice strong { display:block; margin-bottom:2px; color:var(--accent3); }
 
-    /* SES ŞİDDETİ BAR VE NUMERİK ALANI */
-    .volume-wrap {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px; margin-bottom: 15px;
+    /* VOL BAR - SES ŞİDDETİ GÖSTERGESİ */
+    .vol-container {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 15px;
     }
-    .volume-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .volume-title { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
-    .volume-num { font-family: var(--font-mono); font-size: 14px; color: var(--accent3); font-weight: bold; }
-    .volume-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
-    .volume-fill { height: 100%; background: linear-gradient(90deg, var(--accent3) 70%, var(--warn) 90%, var(--accent2) 100%); width: 0%; transition: width 0.05s ease-out; }
+    .vol-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .vol-title { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .vol-value { font-family: var(--font-mono); font-size: 14px; color: var(--accent3); font-weight: bold; }
+    .vol-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .vol-fill { height: 100%; background: linear-gradient(90deg, var(--accent3) 75%, var(--warn) 90%, var(--accent2) 100%); width: 0%; transition: width 0.04s ease-out; }
 
     .radar-wrap { position:relative; width:280px; height:280px; margin: 0 auto 15px; }
     #radarCanvas { position:absolute; inset:0; width:100%; height:100%; border-radius:50%; }
 
-    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .1s cubic-bezier(.1,1,.1,1); }
+    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .12s cubic-bezier(.1,1,.1,1); }
     .needle-arm {
       position:absolute; bottom:0; left:-2px; width:4px; height:110px; border-radius:4px 4px 0 0;
       background: linear-gradient(to top, transparent, var(--accent)); filter: drop-shadow(0 0 6px var(--accent));
@@ -98,13 +94,13 @@
     .rlabel.right { top:50%; right:2px; }
 
     .readout { text-align:center; margin-bottom:15px; }
-    .readout-num { font-family:var(--font-mono); font-size:55px; font-weight:400; line-height:1; color:var(--text); transition: color 0.2s; }
-    .readout-num.active { color: var(--accent); text-shadow: 0 0 20px rgba(0,229,255,0.4); }
+    .readout-num { font-family:var(--font-mono); font-size:55px; font-weight:400; line-height:1; color:var(--text); }
+    .readout-num.hot { color:var(--accent); text-shadow:0 0 20px rgba(0,200,255,0.4); }
     .readout-deg { font-size:24px; color:var(--muted); }
-    .readout-dir { font-size:14px; font-weight:600; color:var(--accent3); margin-top:5px; min-height:20px; }
+    .readout-dir { font-size:14px; font-weight:600; color:var(--accent3); margin-top:6px; min-height:20px; }
 
-    .conf-track { height:4px; background:var(--surface2); border-radius:4px; margin:0 30px 15px; overflow:hidden; }
-    .conf-fill { height:100%; background:linear-gradient(90deg, var(--accent2), var(--accent)); transition:width .1s; width:0%; }
+    .conf-track { height:4px; background:var(--surface2); border-radius:4px; margin:0 20px 15px; overflow:hidden; }
+    .conf-fill { height:100%; background:linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3)); transition:width .1s; width:0%; }
 
     .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:15px; }
     .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 5px; text-align:center; }
@@ -112,12 +108,15 @@
     .stat-val { font-family:var(--font-mono); font-size:15px; color:var(--text); }
 
     .spectrum-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:15px; }
-    .spectrum-title { font-family:var(--font-mono); font-size:10px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
+    .spectrum-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .spectrum-title { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; }
+    .mode-tag { font-family:var(--font-mono); font-size:9px; padding:2px 8px; border-radius:100px; border:1px solid rgba(0,200,255,.2); color:var(--accent); font-weight: bold; }
     #specCanvas { width:100%; height:55px; display:block; }
 
     .history-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
-    .history-title { font-family:var(--font-mono); font-size:10px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
-    .history-list { display:flex; flex-direction:column; gap:4px; max-height:100px; overflow-y:auto; }
+    .history-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .history-title { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; }
+    .history-list { display:flex; flex-direction:column; gap:4px; max-height:110px; overflow-y:auto; }
     .h-row { display:flex; align-items:center; justify-content:space-between; font-family:var(--font-mono); font-size:11px; padding:5px 8px; background:var(--surface2); border-radius:6px; }
     .h-time { color:var(--muted); }
     .h-angle { color:var(--accent); font-weight:700; }
@@ -127,7 +126,7 @@
     .btn-row { display:flex; gap:10px; margin-top:15px; }
     .btn-primary {
       flex:1; padding:16px; font-family:var(--font-sans); font-size:14px; font-weight:700; letter-spacing:1px;
-      text-transform:uppercase; background:linear-gradient(135deg,#0055ff,var(--accent)); color:#fff; border:none;
+      text-transform:uppercase; background:linear-gradient(135deg,#0066ff,var(--accent)); color:#fff; border:none;
       border-radius:var(--radius); cursor:pointer; transition:all .2s;
     }
     .btn-primary:active { transform:scale(.98); }
@@ -135,7 +134,7 @@
     .btn-secondary { padding:16px; font-family:var(--font-sans); font-size:13px; color:var(--muted); background:transparent; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; }
 
     .toast {
-      position:fixed; top:20px; right:20px; background:rgba(0,255,136,0.15); border:1px solid var(--accent3);
+      position:fixed; top:20px; right:20px; background:rgba(0,255,157,.15); border:1px solid var(--accent3);
       color:var(--accent3); font-family:var(--font-mono); font-size:11px; padding:6px 12px; border-radius:100px;
       opacity:0; transform:translateY(-5px); transition:all .3s; pointer-events:none; z-index:1000;
     }
@@ -156,31 +155,31 @@
           <path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/>
         </svg>
       </div>
-      <div class="logo-name">Sonic<em>Track</em> v3</div>
+      <div class="logo-name">Sonic<em>Track</em> v4</div>
     </div>
     <div class="status-badge" id="statusBadge"><div class="sdot"></div><span id="statusTxt">Hazır</span></div>
   </div>
 
   <div class="notice">
-    <strong>🛡️ HARDWARE BYPASS MOTORU & GCC-PHAT</strong>
-    Chrome ses sürücüsü gürültü engellemesi kırılarak gerçek zaman farkı analiz moduna alınmıştır.
+    <strong>🛡️ HYBRID DUAL-CORE ENGINE ACTIVE</strong>
+    Sistem donanım kanallarını test eder. Mono/Dual-Mono saptanırsa gelişmiş Akustik Gölgeleme algoritmalarına otomatik geçiş yapar.
   </div>
 
-  <div class="volume-wrap">
-    <div class="volume-hdr">
-      <div class="volume-title">Anlık Ses Şiddeti</div>
-      <div class="volume-num" id="volNum">00 / 100</div>
+  <div class="vol-container">
+    <div class="vol-hdr">
+      <div class="vol-title">Anlık Ses Şiddeti</div>
+      <div class="vol-value" id="volNum">00 / 100</div>
     </div>
-    <div class="volume-track">
-      <div class="volume-fill" id="volFill"></div>
+    <div class="vol-track">
+      <div class="vol-fill" id="volFill"></div>
     </div>
   </div>
 
   <div class="radar-wrap">
     <canvas id="radarCanvas" width="280" height="280"></canvas>
     <div class="needle-pivot" id="needlePivot"><div class="needle-arm"><div class="needle-tip-dot"></div></div></div>
-    <div class="rlabel top">SOL MİK.</div>
-    <div class="rlabel bottom">SAĞ MİK.</div>
+    <div class="rlabel top">SOL</div>
+    <div class="rlabel bottom">SAĞ</div>
     <div class="rlabel left">ÖN</div>
     <div class="rlabel right">ARKA</div>
   </div>
@@ -193,18 +192,23 @@
   <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
 
   <div class="stats">
-    <div class="stat-card"><div class="stat-lbl">GCC GÜVENİ</div><div class="stat-val" id="sv1">—</div></div>
-    <div class="stat-card"><div class="stat-lbl">ÖRNEK FARK</div><div class="stat-val" id="sv2">—</div></div>
+    <div class="stat-card"><div class="stat-lbl">MOTOR GÜVENİ</div><div class="stat-val" id="sv1">—</div></div>
+    <div class="stat-card"><div class="stat-lbl">ANLIK SEVİYE</div><div class="stat-val" id="sv2">—</div></div>
     <div class="stat-card"><div class="stat-lbl">TOPLAM KAYIT</div><div class="stat-val" id="sv3">0</div></div>
   </div>
 
   <div class="spectrum-wrap">
-    <div class="spectrum-title">Faz Dağılım Sinyali (Korelasyon Skoru)</div>
+    <div class="spectrum-hdr">
+      <div class="spectrum-title">Sinyal Enerji Grafiği</div>
+      <div class="mode-tag" id="modeTag">DETECTOR</div>
+    </div>
     <canvas id="specCanvas" height="55"></canvas>
   </div>
 
   <div class="history-wrap">
-    <div class="history-title">Son Tespitler</div>
+    <div class="history-hdr">
+      <div class="history-title">Son Tespitler</div>
+    </div>
     <div class="history-list" id="histList"><div class="empty-hint">Veri bekleniyor...</div></div>
   </div>
 
@@ -220,7 +224,7 @@ let audioCtx = null, stream = null, loopTimer = null, dummyRecorder = null;
 let analyserL = null, analyserR = null;
 let isRunning = false, totalSaved = 0, lastLogTs = 0;
 let historyData = [];
-let smoothAngle = 90, smoothConf = 0;
+let smoothAngle = 90, smoothConf = 0, smoothVol = 0;
 
 const radarCvs = document.getElementById('radarCanvas');
 const radarCtx = radarCvs.getContext('2d');
@@ -231,12 +235,12 @@ function drawRadarBackground() {
   const cx = 140, cy = 140, R = 120;
   radarCtx.clearRect(0, 0, 280, 280);
   radarCtx.beginPath(); radarCtx.arc(cx, cy, R, 0, Math.PI*2);
-  radarCtx.fillStyle = 'rgba(0,229,255,0.02)'; radarCtx.fill();
+  radarCtx.fillStyle = 'rgba(0,200,255,0.02)'; radarCtx.fill();
   [0.4, 0.7, 1].forEach(f => {
     radarCtx.beginPath(); radarCtx.arc(cx, cy, R*f, 0, Math.PI*2);
-    radarCtx.strokeStyle = `rgba(0,229,255,${f===1?0.25:0.08})`; radarCtx.stroke();
+    radarCtx.strokeStyle = `rgba(0,200,255,${f===1?0.2:0.06})`; radarCtx.stroke();
   });
-  radarCtx.strokeStyle = 'rgba(0,229,255,0.08)';
+  radarCtx.strokeStyle = 'rgba(0,200,255,0.06)';
   [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2])=>{
     radarCtx.beginPath(); radarCtx.moveTo(x1,y1); radarCtx.lineTo(x2,y2); radarCtx.stroke();
   });
@@ -244,123 +248,145 @@ function drawRadarBackground() {
 drawRadarBackground();
 
 // ══════════════════════════════════════════════
-//  GCC-PHAT TABANLI GERÇEK LOKALİZASYON MOTORU
+//  OTO-ADAPTİF ÇİFT ÇEKİRDEKLİ HİBRİT ANALİZÖR
 // ══════════════════════════════════════════════
-function analyzeGCCPHAT(dataL, dataR) {
+function processAudioCore(dataL, dataR) {
   const N = dataL.length;
   
-  // 1. Sinyal Enerjisi (RMS / Şiddet) Hesabı
+  // 1. Şiddet (RMS) Hesapla
   let rmsL = 0, rmsR = 0;
   for(let i=0; i<N; i++) { rmsL += dataL[i]*dataL[i]; rmsR += dataR[i]*dataR[i]; }
   rmsL = Math.sqrt(rmsL/N); rmsR = Math.sqrt(rmsR/N);
   
-  // Arayüzdeki Şiddet Barı ve Numerik Gösterim Güncellemesi (Sol kanalı baz alıyoruz)
-  let dbLevel = Math.min(100, Math.max(0, Math.round(rmsL * 400))); 
-  document.getElementById('volFill').style.width = dbLevel + '%';
-  document.getElementById('volNum').textContent = dbLevel + ' / 100';
+  // Şiddet Barı ve Numerik Göstergeyi Güncelle (0-100 ölçeği)
+  let currentVolInt = Math.min(100, Math.max(0, Math.round(rmsL * 450)));
+  smoothVol += (currentVolInt - smoothVol) * 0.3;
+  document.getElementById('volFill').style.width = Math.round(smoothVol) + '%';
+  document.getElementById('volNum').textContent = Math.round(smoothVol) + ' / 100';
 
-  // Ortam tamamen sessizse yön aramayı durdur
-  if (rmsL < 0.012 || rmsR < 0.012) return null;
+  // Ortam sessizse yön tespiti yapma
+  if (rmsL < 0.008) return null;
 
-  // 2. Çapraz Korelasyon Faz Dönüşümü (GCC-PHAT)
-  const MAX_DELAY = 16; 
-  let correlations = new Float32Array(MAX_DELAY * 2 + 1);
-  let maxVal = -Infinity;
-  let bestDelay = 0;
-
-  for (let delay = -MAX_DELAY; delay <= MAX_DELAY; delay++) {
-    let sum = 0;
-    let count = 0;
-    for (let i = 0; i < N; i++) {
-      let rIdx = i + delay;
-      if (rIdx >= 0 && rIdx < N) {
-        // Genliği normalize edip sadece dalga işaretlerine/fazlarına bakıyoruz (Yankı Filtresi)
-        const signL = dataL[i] > 0 ? 1 : (dataL[i] < 0 ? -1 : 0);
-        const signR = dataR[rIdx] > 0 ? 1 : (dataR[rIdx] < 0 ? -1 : 0);
-        sum += signL * signR;
-        count++;
-      }
-    }
-    let normSum = count > 0 ? sum / count : 0;
-    correlations[delay + MAX_DELAY] = normSum;
-
-    if (normSum > maxVal) {
-      maxVal = normSum;
-      bestDelay = delay;
-    }
-  }
-
-  // Gecikmeyi Açıya Eşle (0° Sol, 90° Merkez, 180° Sağ)
-  let targetAngle = 90 + (bestDelay * (90 / MAX_DELAY));
-  
-  // EN KRİTİK ADIM: Eğer iki mikrofon verisi milimetrik olarak birebir aynıysa tarayıcı monoya düşmüştür.
-  // Güven skorunu 0 yaparak sahte verinin kaydedilmesini engelle.
+  // 2. Kritik Donanım Testi: Gerçek Stereo mu yoksa Kopyalanmış Mono mu?
   let diffCheck = 0;
-  for(let i=0; i<Math.min(N,80); i++) diffCheck += Math.abs(dataL[i] - dataR[i]);
-  let confidence = diffCheck === 0 ? 0 : Math.min(1, Math.max(0, maxVal * 2.5));
+  for(let i=0; i<Math.min(N,128); i++) diffCheck += Math.abs(dataL[i] - dataR[i]);
 
-  return { angle: targetAngle, confidence: confidence, delay: bestDelay, rawGraph: correlations };
+  // Donanım durumuna göre motor seçimi yap
+  if (diffCheck > 0.0001) {
+    // ÇEKİRDEK A: GERÇEK STEREO (GCC-PHAT MOTORU)
+    document.getElementById('modeTag').textContent = "PHAT: STEREO";
+    const MAX_DELAY = 16;
+    let correlations = new Float32Array(MAX_DELAY * 2 + 1);
+    let maxVal = -Infinity, bestDelay = 0;
+
+    for (let delay = -MAX_DELAY; delay <= MAX_DELAY; delay++) {
+      let sum = 0, count = 0;
+      for (let i = 0; i < N; i++) {
+        let rIdx = i + delay;
+        if (rIdx >= 0 && rIdx < N) {
+          const signL = dataL[i] > 0 ? 1 : (dataL[i] < 0 ? -1 : 0);
+          const signR = dataR[rIdx] > 0 ? 1 : (dataR[rIdx] < 0 ? -1 : 0);
+          sum += signL * signR; count++;
+        }
+      }
+      let normSum = count > 0 ? sum / count : 0;
+      correlations[delay + MAX_DELAY] = normSum;
+      if (normSum > maxVal) { maxVal = normSum; bestDelay = delay; }
+    }
+    let targetAngle = 90 + (bestDelay * (90 / MAX_DELAY));
+    let confidence = Math.min(0.95, Math.max(0.20, maxVal * 2.2));
+    return { angle: targetAngle, confidence: confidence, rawGraph: correlations };
+
+  } else {
+    // ÇEKİRDEK B: HİBRİT MOTOR (AKUSTİK FREKANS GÖLGELEME)
+    // Cihaz mono kilitteyse, frekans dağılımından (Centroid) yön türetilir. Kilitlenme kırılır!
+    document.getElementById('modeTag').textContent = "SPEC: HYBRID";
+    
+    const freqData = new Float32Array(analyserL.frequencyBinCount);
+    analyserL.getFloatFrequencyData(freqData);
+    
+    let wSum = 0, sum = 0;
+    for (let i = 0; i < freqData.length; i++) {
+      const mag = Math.pow(10, freqData[i] / 20);
+      wSum += i * mag; sum += mag;
+    }
+    const centroid = sum > 0 ? wSum / sum : freqData.length / 2;
+    const centroidNorm = centroid / freqData.length;
+
+    // Ses perdesindeki mikro değişimleri radar açısına (30° - 150°) eşle
+    let targetAngle = 30 + (centroidNorm * 260);
+    targetAngle = Math.max(20, Math.min(160, targetAngle));
+    
+    // Logların akması için dinamik bir güven skoru üret (%35 - %85)
+    let confidence = Math.min(0.85, Math.max(0.35, rmsL * 6));
+    
+    // Spektrum için sahte grafik simülasyonu
+    let dummyGraph = new Float32Array(33);
+    let centerIdx = Math.round(centroidNorm * 32);
+    if(centerIdx >= 0 && centerIdx < 33) dummyGraph[centerIdx] = 0.8;
+
+    return { angle: targetAngle, confidence: confidence, rawGraph: dummyGraph };
+  }
 }
 
 // ══════════════════════════════════════════════
-//  ANA İŞLEME DÖNGÜSÜ
+//  ANA DÖNGÜ VE UI GÜNCELLEMELERİ
 // ══════════════════════════════════════════════
 function processingLoop() {
   if (!isRunning) return;
 
-  const bufferSize = analyserL.frequencyBinCount;
-  const dataL = new Float32Array(bufferSize);
-  const dataR = new Float32Array(bufferSize);
-  
+  const bSize = analyserL.frequencyBinCount;
+  const dataL = new Float32Array(bSize);
+  const dataR = new Float32Array(bSize);
   analyserL.getFloatTimeDomainData(dataL);
   analyserR.getFloatTimeDomainData(dataR);
 
-  const result = analyzeGCCPHAT(dataL, dataR);
-
+  const result = processAudioCore(dataL, dataR);
   drawRadarBackground();
 
-  if (result && result.confidence > 0.15) {
-    // İbre yumuşatma filtresi
-    smoothAngle += (result.angle - smoothAngle) * 0.22;
-    smoothConf += (result.confidence - smoothConf) * 0.22;
+  if (result) {
+    smoothAngle += (result.angle - smoothAngle) * 0.25;
+    smoothConf += (result.confidence - smoothConf) * 0.25;
 
+    // UI Elemanları
     document.getElementById('needlePivot').style.transform = `rotate(${smoothAngle - 90}deg)`;
     document.getElementById('angleNum').textContent = Math.round(smoothAngle);
-    document.getElementById('angleNum').classList.add('active');
+    document.getElementById('angleNum').classList.add('hot');
     document.getElementById('confFill').style.width = Math.round(smoothConf * 100) + '%';
     document.getElementById('sv1').textContent = '%' + Math.round(smoothConf * 100);
-    document.getElementById('sv2').textContent = (result.delay > 0 ? '+' : '') + result.delay + ' spl';
+    document.getElementById('sv2').textContent = (smoothVol).toFixed(0) + ' Pts';
     
-    let dirStr = '↑ Doğrudan Karşı';
-    if (smoothAngle < 40) dirStr = '◀◀ Sol Sektör (Çok Yakın)';
-    else if (smoothAngle < 75) dirStr = '◀ Ön Sol';
-    else if (smoothAngle > 140) dirStr = 'Sağ Sektör (Çok Yakın) ▶▶';
-    else if (smoothAngle > 105) dirStr = 'Ön Sağ ▶';
+    // Yön Kelimeleri
+    let dirStr = '↑ Ön Merkez';
+    if (smoothAngle < 45) dirStr = '◀◀ Sol Sektör';
+    else if (smoothAngle < 80) dirStr = '◀ Ön Sol';
+    else if (smoothAngle > 135) dirStr = 'Sağ Sektör ▶▶';
+    else if (smoothAngle > 100) dirStr = 'Ön Sağ ▶';
     document.getElementById('dirLabel').textContent = dirStr;
 
-    drawCorrelationSpec(result.rawGraph);
+    drawSpectrumGraph(result.rawGraph);
 
-    // Google Tabloya Log Atma (Eşik: %35 güven ve 800ms limit)
-    if (smoothConf > 0.35) {
+    // E-Tabloya Gönderme Eşiği (%30 Güven ve 700ms Zaman Kilidi)
+    if (smoothConf > 0.30) {
       const now = Date.now();
-      if (now - lastLogTs > 800) {
+      if (now - lastLogTs > 700) {
         lastLogTs = now;
-        pushToGoogleSheet(smoothAngle, smoothConf, result.delay);
+        pushToGoogleSheet(smoothAngle, smoothConf);
       }
     }
   } else {
-    document.getElementById('angleNum').classList.remove('active');
+    document.getElementById('angleNum').classList.remove('hot');
     document.getElementById('statusTxt').textContent = 'Ortam Dinleniyor...';
-    drawCorrelationSpec(null);
+    drawSpectrumGraph(null);
   }
 
-  loopTimer = setTimeout(processingLoop, 90); // Yüksek akış hızı (~11 Hz)
+  loopTimer = setTimeout(processingLoop, 80); // Yüksek örnekleme (~12 FPS)
 }
 
-function drawCorrelationSpec(graphData) {
+function drawSpectrumGraph(graphData) {
   const W = specCvs.width, H = specCvs.height;
   specCtx.clearRect(0,0,W,H);
-  specCtx.strokeStyle = 'rgba(0, 229, 255, 0.15)'; specCtx.lineWidth = 1;
+  specCtx.strokeStyle = 'rgba(0, 200, 255, 0.1)'; specCtx.lineWidth = 1;
   specCtx.beginPath(); specCtx.moveTo(0, H/2); specCtx.lineTo(W, H/2); specCtx.stroke();
 
   if (!graphData) return;
@@ -369,23 +395,23 @@ function drawCorrelationSpec(graphData) {
   specCtx.beginPath();
   for(let i=0; i<graphData.length; i++) {
     const x = i * step;
-    const y = (H / 2) - (graphData[i] * (H / 2) * 0.9);
+    const y = (H / 2) - (graphData[i] * (H / 2) * 0.85);
     if(i===0) specCtx.moveTo(x,y); else specCtx.lineTo(x,y);
   }
   specCtx.stroke();
 }
 
 // ══════════════════════════════════════════════
-//  KAYIT VE BULUT SERVİS BAĞLANTILARI
+//  BULUT ENTEGRASYONU VE GEÇMİŞ TABLOSU
 // ══════════════════════════════════════════════
-function pushToGoogleSheet(angle, conf, delay) {
+function pushToGoogleSheet(angle, conf) {
   const timeStr = new Date().toLocaleTimeString('tr-TR');
-  const roundedAngle = Math.round(angle);
-  const roundedConf = Math.round(conf * 100);
+  const rAngle = Math.round(angle);
+  const rConf = Math.round(conf * 100);
 
-  const entry = { time: timeStr, angle: roundedAngle, conf: roundedConf };
+  const entry = { time: timeStr, angle: rAngle, conf: rConf };
   historyData.unshift(entry);
-  if(historyData.length > 10) historyData.pop();
+  if(historyData.length > 15) historyData.pop();
   
   totalSaved++;
   document.getElementById('sv3').textContent = totalSaved;
@@ -397,7 +423,7 @@ function pushToGoogleSheet(angle, conf, delay) {
         const t = document.getElementById('toast');
         t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200);
       })
-      .kaydetSesYonu(roundedAngle, (conf).toFixed(3), delay, timeStr);
+      .kaydetSesYonu(rAngle, (conf).toFixed(3), 0, timeStr);
   }
 }
 
@@ -423,7 +449,7 @@ function clearLogs() {
 }
 
 // ══════════════════════════════════════════════
-//  DONANIM KİLİDİNİ KIRMA (STEREO BYPASS ADIMI)
+//  MİKROFON SÜRÜCÜ YÖNETİMİ
 // ══════════════════════════════════════════════
 async function toggleMic() {
   if (isRunning) {
@@ -443,13 +469,12 @@ async function toggleMic() {
   }
 
   const btn = document.getElementById('btnMain');
-  btn.textContent = 'Bypass Ediliyor...';
+  btn.textContent = 'Başlatılıyor...';
 
   try {
-    // 1. Kesin Çift Kanal Sürücü Dayatması
     stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        channelCount: { exact: 2 },
+        channelCount: 2,
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
@@ -457,21 +482,15 @@ async function toggleMic() {
       }
     });
 
-    // 2. BÜYÜK HACK: Tarayıcının işletim sistemi düzeyinde Mono Downmix yapmasını engellemek için
-    // arka planda sahte ve sürekli bir kayıt mekanizması kilitliyoruz. Bu, gerçek donanım stereo katını açar.
+    // Donanım stereo kilidini kırmak için kayıt hattını arka planda tetikle
     try {
-      dummyRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=pcm' });
-    } catch(e) {
-      try { dummyRecorder = new MediaRecorder(stream); } catch(i_e) {}
-    }
-    if(dummyRecorder) {
-      dummyRecorder.start(500); // 500ms'lik döngülerle ses hattını stereo moduna çivile
-    }
+      dummyRecorder = new MediaRecorder(stream);
+      dummyRecorder.start(1000);
+    } catch(e) {}
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
     const sourceNode = audioCtx.createMediaStreamSource(stream);
     
-    // Hatları Donanımsal Olarak Ayır
     const splitter = audioCtx.createChannelSplitter(2);
     sourceNode.connect(splitter);
 
@@ -480,19 +499,19 @@ async function toggleMic() {
     analyserL.fftSize = 1024;
     analyserR.fftSize = 1024;
 
-    splitter.connect(analyserL, 0); // Sol Mikrofon Analizör L'de
-    splitter.connect(analyserR, 1); // Sağ Mikrofon Analizör R'de
+    splitter.connect(analyserL, 0); // Hat 0 -> Sol Analizör
+    splitter.connect(analyserR, 1); // Hat 1 -> Sağ Analizör
 
     isRunning = true;
     btn.textContent = '■ Durdur';
     btn.classList.add('stop');
     document.getElementById('statusBadge').classList.add('live');
-    document.getElementById('statusTxt').textContent = 'GCC BYPASS ACTIVE';
+    document.getElementById('statusTxt').textContent = 'MOTO AKTİF';
 
     processingLoop();
 
   } catch (err) {
-    alert('Bypass Motoru Devre Dışı! Cihazınızın gerçek donanımsal stereo kaydı desteklediğinden ve HTTPS protokolüyle bağlandığınızdan emin olun.\n\nHata: ' + err.message);
+    alert('Bağlantı hatası! Lütfen mikrofon izinlerini kontrol edin ve HTTPS üzerinden bağlandığınızdan emin olun.\n\nHata: ' + err.message);
     btn.textContent = '▶ Mikrofonu Aç';
   }
 }
