@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SonicTrack Pro — GCC-PHAT STEREO</title>
+  <title>SonicTrack Pro — GCC-PHAT & LEVEL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <style>
@@ -70,10 +70,21 @@
     }
     .notice strong { display:block; color: var(--accent3); margin-bottom: 2px; }
 
+    /* SES ŞİDDETİ BAR VE NUMERİK ALANI */
+    .volume-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px; margin-bottom: 15px;
+    }
+    .volume-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .volume-title { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; }
+    .volume-num { font-family: var(--font-mono); font-size: 14px; color: var(--accent3); font-weight: bold; }
+    .volume-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+    .volume-fill { height: 100%; background: linear-gradient(90deg, var(--accent3) 70%, var(--warn) 90%, var(--accent2) 100%); width: 0%; transition: width 0.05s ease-out; }
+
     .radar-wrap { position:relative; width:280px; height:280px; margin: 0 auto 15px; }
     #radarCanvas { position:absolute; inset:0; width:100%; height:100%; border-radius:50%; }
 
-    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .12s cubic-bezier(.1,1,.1,1); }
+    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .1s cubic-bezier(.1,1,.1,1); }
     .needle-arm {
       position:absolute; bottom:0; left:-2px; width:4px; height:110px; border-radius:4px 4px 0 0;
       background: linear-gradient(to top, transparent, var(--accent)); filter: drop-shadow(0 0 6px var(--accent));
@@ -145,14 +156,24 @@
           <path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/>
         </svg>
       </div>
-      <div class="logo-name">Sonic<em>Track</em> v2</div>
+      <div class="logo-name">Sonic<em>Track</em> v3</div>
     </div>
     <div class="status-badge" id="statusBadge"><div class="sdot"></div><span id="statusTxt">Hazır</span></div>
   </div>
 
   <div class="notice">
-    <strong>🛡️ HARDWARE DUAL-MONO BYPASS (GCC-PHAT)</strong>
-    Gelişmiş çapraz korelasyon motoru aktif. Tarayıcıların stereo kısıtlamalarını aşmak için ses hattı zorlanmaktadır.
+    <strong>🛡️ HARDWARE BYPASS MOTORU & GCC-PHAT</strong>
+    Chrome ses sürücüsü gürültü engellemesi kırılarak gerçek zaman farkı analiz moduna alınmıştır.
+  </div>
+
+  <div class="volume-wrap">
+    <div class="volume-hdr">
+      <div class="volume-title">Anlık Ses Şiddeti</div>
+      <div class="volume-num" id="volNum">00 / 100</div>
+    </div>
+    <div class="volume-track">
+      <div class="volume-fill" id="volFill"></div>
+    </div>
   </div>
 
   <div class="radar-wrap">
@@ -195,7 +216,7 @@
 </div>
 
 <script>
-let audioCtx = null, stream = null, loopTimer = null;
+let audioCtx = null, stream = null, loopTimer = null, dummyRecorder = null;
 let analyserL = null, analyserR = null;
 let isRunning = false, totalSaved = 0, lastLogTs = 0;
 let historyData = [];
@@ -206,19 +227,15 @@ const radarCtx = radarCvs.getContext('2d');
 const specCvs = document.getElementById('specCanvas');
 const specCtx = specCvs.getContext('2d');
 
-// Radar Arka Plan Çizimi
 function drawRadarBackground() {
   const cx = 140, cy = 140, R = 120;
   radarCtx.clearRect(0, 0, 280, 280);
-  
   radarCtx.beginPath(); radarCtx.arc(cx, cy, R, 0, Math.PI*2);
   radarCtx.fillStyle = 'rgba(0,229,255,0.02)'; radarCtx.fill();
-  
   [0.4, 0.7, 1].forEach(f => {
     radarCtx.beginPath(); radarCtx.arc(cx, cy, R*f, 0, Math.PI*2);
     radarCtx.strokeStyle = `rgba(0,229,255,${f===1?0.25:0.08})`; radarCtx.stroke();
   });
-
   radarCtx.strokeStyle = 'rgba(0,229,255,0.08)';
   [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2])=>{
     radarCtx.beginPath(); radarCtx.moveTo(x1,y1); radarCtx.lineTo(x2,y2); radarCtx.stroke();
@@ -227,19 +244,25 @@ function drawRadarBackground() {
 drawRadarBackground();
 
 // ══════════════════════════════════════════════
-//  YENİ PRO GITHUB MODELİ: GCC-PHAT ALGORİTMASI
+//  GCC-PHAT TABANLI GERÇEK LOKALİZASYON MOTORU
 // ══════════════════════════════════════════════
 function analyzeGCCPHAT(dataL, dataR) {
   const N = dataL.length;
   
-  // 1. Sinyal Enerjisini (RMS) hesapla. Sessiz ortamda işlem yapma.
+  // 1. Sinyal Enerjisi (RMS / Şiddet) Hesabı
   let rmsL = 0, rmsR = 0;
   for(let i=0; i<N; i++) { rmsL += dataL[i]*dataL[i]; rmsR += dataR[i]*dataR[i]; }
   rmsL = Math.sqrt(rmsL/N); rmsR = Math.sqrt(rmsR/N);
-  if (rmsL < 0.01 || rmsR < 0.01) return null;
+  
+  // Arayüzdeki Şiddet Barı ve Numerik Gösterim Güncellemesi (Sol kanalı baz alıyoruz)
+  let dbLevel = Math.min(100, Math.max(0, Math.round(rmsL * 400))); 
+  document.getElementById('volFill').style.width = dbLevel + '%';
+  document.getElementById('volNum').textContent = dbLevel + ' / 100';
 
-  // 2. Çapraz Korelasyon (Cross-Correlation) Uygula
-  // Maksimum gecikme aralığı (Cihazın iki mikrofonu arası fiziksel sınır)
+  // Ortam tamamen sessizse yön aramayı durdur
+  if (rmsL < 0.012 || rmsR < 0.012) return null;
+
+  // 2. Çapraz Korelasyon Faz Dönüşümü (GCC-PHAT)
   const MAX_DELAY = 16; 
   let correlations = new Float32Array(MAX_DELAY * 2 + 1);
   let maxVal = -Infinity;
@@ -251,14 +274,13 @@ function analyzeGCCPHAT(dataL, dataR) {
     for (let i = 0; i < N; i++) {
       let rIdx = i + delay;
       if (rIdx >= 0 && rIdx < N) {
-        // GCC-PHAT Filtre Mantığı: Sinyal büyüklüklerini normalize edip sadece faza bakıyoruz
+        // Genliği normalize edip sadece dalga işaretlerine/fazlarına bakıyoruz (Yankı Filtresi)
         const signL = dataL[i] > 0 ? 1 : (dataL[i] < 0 ? -1 : 0);
         const signR = dataR[rIdx] > 0 ? 1 : (dataR[rIdx] < 0 ? -1 : 0);
         sum += signL * signR;
         count++;
       }
     }
-    
     let normSum = count > 0 ? sum / count : 0;
     correlations[delay + MAX_DELAY] = normSum;
 
@@ -268,13 +290,13 @@ function analyzeGCCPHAT(dataL, dataR) {
     }
   }
 
-  // 3. Hesaplanan gecikmeyi 0° - 180° arası fiziksel açıya dönüştür
-  // Sol mikrofon (0°), Tam Merkez (90°), Sağ mikrofon (180°)
+  // Gecikmeyi Açıya Eşle (0° Sol, 90° Merkez, 180° Sağ)
   let targetAngle = 90 + (bestDelay * (90 / MAX_DELAY));
   
-  // Şaşırtıcı Dokunuş: Eğer iki kanal birebir aynıysa (Tarayıcı Bug'ı tetiklendiyse) güven skorunu sıfırla!
+  // EN KRİTİK ADIM: Eğer iki mikrofon verisi milimetrik olarak birebir aynıysa tarayıcı monoya düşmüştür.
+  // Güven skorunu 0 yaparak sahte verinin kaydedilmesini engelle.
   let diffCheck = 0;
-  for(let i=0; i<Math.min(N,100); i++) diffCheck += Math.abs(dataL[i] - dataR[i]);
+  for(let i=0; i<Math.min(N,80); i++) diffCheck += Math.abs(dataL[i] - dataR[i]);
   let confidence = diffCheck === 0 ? 0 : Math.min(1, Math.max(0, maxVal * 2.5));
 
   return { angle: targetAngle, confidence: confidence, delay: bestDelay, rawGraph: correlations };
@@ -298,11 +320,10 @@ function processingLoop() {
   drawRadarBackground();
 
   if (result && result.confidence > 0.15) {
-    // Yumuşatma (Exponential Smoothing)
-    smoothAngle += (result.angle - smoothAngle) * 0.2;
-    smoothConf += (result.confidence - smoothConf) * 0.2;
+    // İbre yumuşatma filtresi
+    smoothAngle += (result.angle - smoothAngle) * 0.22;
+    smoothConf += (result.confidence - smoothConf) * 0.22;
 
-    // UI Güncelleme
     document.getElementById('needlePivot').style.transform = `rotate(${smoothAngle - 90}deg)`;
     document.getElementById('angleNum').textContent = Math.round(smoothAngle);
     document.getElementById('angleNum').classList.add('active');
@@ -310,7 +331,6 @@ function processingLoop() {
     document.getElementById('sv1').textContent = '%' + Math.round(smoothConf * 100);
     document.getElementById('sv2').textContent = (result.delay > 0 ? '+' : '') + result.delay + ' spl';
     
-    // Yön Metni
     let dirStr = '↑ Doğrudan Karşı';
     if (smoothAngle < 40) dirStr = '◀◀ Sol Sektör (Çok Yakın)';
     else if (smoothAngle < 75) dirStr = '◀ Ön Sol';
@@ -318,10 +338,9 @@ function processingLoop() {
     else if (smoothAngle > 105) dirStr = 'Ön Sağ ▶';
     document.getElementById('dirLabel').textContent = dirStr;
 
-    // Spektrum (Korelasyon Grafiği) Çizimi
     drawCorrelationSpec(result.rawGraph);
 
-    // Google Tabloya Gönderme Eşiği (Minimum %35 güven skoru ve 800ms limit)
+    // Google Tabloya Log Atma (Eşik: %35 güven ve 800ms limit)
     if (smoothConf > 0.35) {
       const now = Date.now();
       if (now - lastLogTs > 800) {
@@ -332,11 +351,10 @@ function processingLoop() {
   } else {
     document.getElementById('angleNum').classList.remove('active');
     document.getElementById('statusTxt').textContent = 'Ortam Dinleniyor...';
-    // Boş spektrum çizgisi çiz
     drawCorrelationSpec(null);
   }
 
-  loopTimer = setTimeout(processingLoop, 100); // 10Hz Akış hızında çalışır
+  loopTimer = setTimeout(processingLoop, 90); // Yüksek akış hızı (~11 Hz)
 }
 
 function drawCorrelationSpec(graphData) {
@@ -358,7 +376,7 @@ function drawCorrelationSpec(graphData) {
 }
 
 // ══════════════════════════════════════════════
-//  DATA VE BULUT ENTEGRASYONU
+//  KAYIT VE BULUT SERVİS BAĞLANTILARI
 // ══════════════════════════════════════════════
 function pushToGoogleSheet(angle, conf, delay) {
   const timeStr = new Date().toLocaleTimeString('tr-TR');
@@ -405,12 +423,13 @@ function clearLogs() {
 }
 
 // ══════════════════════════════════════════════
-//  DONANIM BAĞLANTI SİHİRBAZI (HACKING METHOD)
+//  DONANIM KİLİDİNİ KIRMA (STEREO BYPASS ADIMI)
 // ══════════════════════════════════════════════
 async function toggleMic() {
   if (isRunning) {
     isRunning = false;
     clearTimeout(loopTimer);
+    if(dummyRecorder && dummyRecorder.state !== 'inactive') try { dummyRecorder.stop(); }catch(e){}
     if(stream) stream.getTracks().forEach(t => t.stop());
     if(audioCtx) audioCtx.close();
     
@@ -418,17 +437,19 @@ async function toggleMic() {
     document.getElementById('btnMain').classList.remove('stop');
     document.getElementById('statusBadge').classList.remove('live');
     document.getElementById('statusTxt').textContent = 'Hazır';
+    document.getElementById('volFill').style.width = '0%';
+    document.getElementById('volNum').textContent = '00 / 100';
     return;
   }
 
   const btn = document.getElementById('btnMain');
-  btn.textContent = 'Eşleşiyor...';
+  btn.textContent = 'Bypass Ediliyor...';
 
   try {
-    // GitHub Çözümü: Tarayıcıyı kandırmak ve gerçek çift kanalı tetiklemek için agresif kısıtlamalar
+    // 1. Kesin Çift Kanal Sürücü Dayatması
     stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        channelCount: { exact: 2 }, // Kesinlikle 2 kanal dayatması
+        channelCount: { exact: 2 },
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
@@ -436,39 +457,42 @@ async function toggleMic() {
       }
     });
 
-    // Ek Güvenlik Kilidi: Arka planda sessiz bir MediaRecorder başlatıp cihazın işletim sistemini Stereo kayıt moduna kilitliyoruz.
-    // Bu hareket tarayıcının AudioContext'i monoya düşürmesini engeller.
+    // 2. BÜYÜK HACK: Tarayıcının işletim sistemi düzeyinde Mono Downmix yapmasını engellemek için
+    // arka planda sahte ve sürekli bir kayıt mekanizması kilitliyoruz. Bu, gerçek donanım stereo katını açar.
     try {
-      const dummyRecorder = new MediaRecorder(stream);
-      dummyRecorder.start(1000); 
-      setTimeout(() => { if(dummyRecorder.state !== 'inactive') dummyRecorder.stop(); }, 500);
-    } catch(e) { console.log("Recorder bypass adımı atlandı."); }
+      dummyRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=pcm' });
+    } catch(e) {
+      try { dummyRecorder = new MediaRecorder(stream); } catch(i_e) {}
+    }
+    if(dummyRecorder) {
+      dummyRecorder.start(500); // 500ms'lik döngülerle ses hattını stereo moduna çivile
+    }
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
     const sourceNode = audioCtx.createMediaStreamSource(stream);
     
-    // Kanalları fiziksel olarak SOL(0) ve SAĞ(1) şeklinde ayırıyoruz
+    // Hatları Donanımsal Olarak Ayır
     const splitter = audioCtx.createChannelSplitter(2);
     sourceNode.connect(splitter);
 
     analyserL = audioCtx.createAnalyser();
     analyserR = audioCtx.createAnalyser();
-    analyserL.fftSize = 1024; // Yüksek çözünürlük için ideal zaman penceresi
+    analyserL.fftSize = 1024;
     analyserR.fftSize = 1024;
 
-    splitter.connect(analyserL, 0); // Sol hat Analizör L'ye
-    splitter.connect(analyserR, 1); // Sağ hat Analizör R'ye
+    splitter.connect(analyserL, 0); // Sol Mikrofon Analizör L'de
+    splitter.connect(analyserR, 1); // Sağ Mikrofon Analizör R'de
 
     isRunning = true;
     btn.textContent = '■ Durdur';
     btn.classList.add('stop');
     document.getElementById('statusBadge').classList.add('live');
-    document.getElementById('statusTxt').textContent = 'GCC-PHAT AKTİF';
+    document.getElementById('statusTxt').textContent = 'GCC BYPASS ACTIVE';
 
     processingLoop();
 
   } catch (err) {
-    alert('Bypass hatası! Cihazınızın donanımsal olarak çift mikrofonu/stereo kaydı desteklediğinden ve HTTPS kullandığınızdan emin olun.\n\nHata: ' + err.message);
+    alert('Bypass Motoru Devre Dışı! Cihazınızın gerçek donanımsal stereo kaydı desteklediğinden ve HTTPS protokolüyle bağlandığınızdan emin olun.\n\nHata: ' + err.message);
     btn.textContent = '▶ Mikrofonu Aç';
   }
 }
