@@ -61,7 +61,7 @@
     .sdot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    /* ANLIK & ZİRVE SES ŞİDDETİ BAR ALANI */
+    /* KALICI ZİRVE HAFIZALI SES ŞİDDETİ ALANI */
     .vol-container {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 15px;
     }
@@ -74,7 +74,7 @@
     .radar-wrap { position:relative; width:280px; height:280px; margin: 0 auto 15px; }
     #radarCanvas { position:absolute; inset:0; width:100%; height:100%; border-radius:50%; }
 
-    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .12s cubic-bezier(.1,1,.1,1); }
+    .needle-pivot { position:absolute; top:50%; left:50%; width:0; height:0; transform-origin:0 0; transition: transform .1s ease-out; }
     .needle-arm {
       position:absolute; bottom:0; left:-2px; width:4px; height:110px; border-radius:4px 4px 0 0;
       background: linear-gradient(to top, transparent, var(--accent)); filter: drop-shadow(0 0 6px var(--accent));
@@ -156,8 +156,8 @@
 
   <div class="vol-container">
     <div class="vol-hdr">
-      <div class="vol-title">Anlık Ses Şiddeti</div>
-      <div class="vol-value" id="volNum">00 / 100 (Zirve: 0)</div>
+      <div class="vol-title">Ses Şiddeti</div>
+      <div class="vol-value" id="volNum">0 / 100 (Zirve: 0)</div>
     </div>
     <div class="vol-track">
       <div class="vol-fill" id="volFill"></div>
@@ -167,10 +167,10 @@
   <div class="radar-wrap">
     <canvas id="radarCanvas" width="280" height="280"></canvas>
     <div class="needle-pivot" id="needlePivot"><div class="needle-arm"><div class="needle-tip-dot"></div></div></div>
-    <div class="rlabel top">SOL</div>
-    <div class="rlabel bottom">SAĞ</div>
-    <div class="rlabel left">ÖN</div>
-    <div class="rlabel right">ARKA</div>
+    <div class="rlabel top">ÖN</div>
+    <div class="rlabel bottom">ARKA</div>
+    <div class="rlabel left">SOL</div>
+    <div class="rlabel right">SAĞ</div>
   </div>
 
   <div class="readout">
@@ -182,14 +182,14 @@
 
   <div class="stats">
     <div class="stat-card"><div class="stat-lbl">GÜVEN SKORU</div><div class="stat-val" id="sv1">—</div></div>
-    <div class="stat-card"><div class="stat-lbl">ANLIK / ZİRVE</div><div class="stat-val" id="sv2">—</div></div>
+    <div class="stat-card"><div class="stat-lbl">ZİRVE SEVİYE</div><div class="stat-val" id="sv2">—</div></div>
     <div class="stat-card"><div class="stat-lbl">TOPLAM KAYIT</div><div class="stat-val" id="sv3">0</div></div>
   </div>
 
   <div class="spectrum-wrap">
     <div class="spectrum-hdr">
       <div class="spectrum-title">Frekans Spektrumu</div>
-      <div class="mode-tag" id="modeTag">MONO AKTİF</div>
+      <div class="mode-tag" id="modeTag">BAĞLANILIYOR</div>
     </div>
     <canvas id="specCanvas" height="55"></canvas>
   </div>
@@ -202,7 +202,7 @@
   </div>
 
   <div class="btn-row">
-    <button class="btn-primary" id="btnMain" onclick="toggleMic()">▶ Mikrofonu Aç</button>
+    <button class="btn-primary" id="btnMain" onclick="toggleMic()">▶ Mikrofonu Başlat</button>
     <button class="btn-secondary" onclick="clearLogs()">Temizle</button>
   </div>
 
@@ -210,11 +210,17 @@
 
 <script>
 let audioCtx = null, stream = null, loopTimer = null;
-let analyser = null;
-let isRunning = false, totalSaved = 0, lastLogTs = 0;
+let source = null, splitter = null;
+let analyserL = null, analyserR = null, analyserM = null;
+let isRunning = false, isStereo = false;
+let totalSaved = 0, lastLogTs = 0;
 let historyData = [];
 let smoothAngle = 90, smoothConf = 0, smoothVol = 0;
 let maxPeakLevel = 0; // Kalıcı Zirve Seviyesi Hafızası
+
+const ANGLE_BUF_SIZE = 6;
+let angleBuf = Array(ANGLE_BUF_SIZE).fill(90);
+let angleBufIdx = 0;
 
 const radarCvs = document.getElementById('radarCanvas');
 const radarCtx = radarCvs.getContext('2d');
@@ -238,50 +244,289 @@ function drawRadarBackground() {
 drawRadarBackground();
 
 // ══════════════════════════════════════════════
-//  ADAPTİF MONO SES ANALİZ MOTORU
+//  ZAMAN GECİKMESİ ANALİZ MOTORU (CROSS-CORRELATION)
 // ══════════════════════════════════════════════
-function processAudioCore(freqData, timeData) {
-  const N = freqData.length;
-  
-  // 1. RMS Enerji Hesaplama
+function mainLoop() {
+  if (!isRunning) return;
+
   let rms = 0;
-  for(let i=0; i<timeData.length; i++) rms += timeData[i]*timeData[i];
-  rms = Math.sqrt(rms / timeData.length);
-  
-  // Şiddet Barı ve Kalıcı Zirve Güncellemesi
-  let currentVolInt = Math.min(100, Math.max(0, Math.round(rms * 480)));
-  if (currentVolInt > maxPeakLevel) {
-    maxPeakLevel = currentVolInt; // Sadece daha büyük bir ses gelirse güncellenir
+  let targetAngle = 90;
+  let confidence = 0;
+
+  if (isStereo) {
+    // Çift Kanallı Gerçek Fiziksel Yön Bulma Modu
+    const timeDataL = new Float32Array(analyserL.fftSize);
+    const timeDataR = new Float32Array(analyserR.fftSize);
+    analyserL.getFloatTimeDomainData(timeDataL);
+    analyserR.getFloatTimeDomainData(timeDataR);
+
+    const freqDataL = new Float32Array(analyserL.frequencyBinCount);
+    analyserL.getFloatFrequencyData(freqDataL);
+    drawSpectrumGraph(freqDataL);
+
+    let sumL = 0, sumR = 0;
+    for (let i = 0; i < timeDataL.length; i++) {
+      sumL += timeDataL[i] * timeDataL[i];
+      sumR += timeDataR[i] * timeDataR[i];
+    }
+    rms = Math.sqrt((sumL + sumR) / (2 * timeDataL.length));
+
+    if (rms > 0.005) {
+      // Zaman Gecikmesi Taraması (README'deki ±20 örnek sınırı)
+      let maxLag = 20;
+      let bestLag = 0;
+      let maxVal = -Infinity;
+      let len = timeDataL.length;
+
+      for (let lag = -maxLag; lag <= maxLag; lag++) {
+        let correlation = 0;
+        for (let i = 0; i < len; i++) {
+          let rIdx = i + lag;
+          if (rIdx >= 0 && rIdx < len) {
+            correlation += timeDataL[i] * timeDataR[rIdx];
+          }
+        }
+        if (correlation > maxVal) {
+          maxVal = correlation;
+          bestLag = lag;
+        }
+      }
+
+      // Lag değerini Açıya Haritala (-20 = Sol, 0 = Ön Merkez, +20 = Sağ)
+      let lagRatio = bestLag / maxLag;
+      targetAngle = 90 + (lagRatio * 85); 
+      confidence = Math.min(0.98, rms * 35);
+    }
+  } else {
+    // Mono Cihazlar İçin Gelişmiş Akustik Centroid Fallback Modu
+    const timeDataM = new Float32Array(analyserM.fftSize);
+    const freqDataM = new Float32Array(analyserM.frequencyBinCount);
+    analyserM.getFloatTimeDomainData(timeDataM);
+    analyserM.getFloatFrequencyData(freqDataM);
+    drawSpectrumGraph(freqDataM);
+
+    let sumM = 0;
+    for (let i = 0; i < timeDataM.length; i++) sumM += timeDataM[i] * timeDataM[i];
+    rms = Math.sqrt(sumM / timeDataM.length);
+
+    if (rms > 0.005) {
+      let wSum = 0, sumF = 0;
+      for (let i = 3; i < Math.min(freqDataM.length, 180); i++) {
+        const mag = Math.pow(10, freqDataM[i] / 20);
+        wSum += i * mag; sumF += mag;
+      }
+      const centroid = sumF > 0 ? wSum / sumF : 40;
+      let normCentroid = (centroid - 5) / (80 - 5);
+      normCentroid = Math.max(0, Math.min(1, normCentroid));
+      
+      targetAngle = 15 + (normCentroid * 150);
+      confidence = Math.min(0.95, rms * 20);
+    }
   }
-  
+
+  // Anlık Ses Şiddeti Hesaplama ve Kalıcı Zirve Takibi
+  let currentVolInt = Math.min(100, Math.max(0, Math.round(rms * 550)));
+  if (currentVolInt > maxPeakLevel) {
+    maxPeakLevel = currentVolInt; // Sadece daha şiddetli ses gelirse güncellenir
+  }
+
   smoothVol += (currentVolInt - smoothVol) * 0.3;
   document.getElementById('volFill').style.width = Math.round(smoothVol) + '%';
-  document.getElementById('volNum').textContent = Math.round(smoothVol) + ' / 100 (Zirve: ' + maxPeakLevel + ')';
+  document.getElementById('volNum').textContent = `${Math.round(smoothVol)} / 100 (Zirve: ${maxPeakLevel})`;
 
-  // Ortam tamamen sessizse işlem yapma
-  if (rms < 0.008) return null;
+  drawRadarBackground();
 
-  // 2. Dinamik İstikamet Atama (Frekans Spektrumu Centroid Modeli)
-  // Eski statik yapıyı kırarak ses karakterine göre ibreyi 15°-165° arasına yayar
-  let wSum = 0, sum = 0;
-  const analysisRange = Math.min(N, 160); // Ses frekans ağırlık bölgesi
-  for (let i = 3; i < analysisRange; i++) {
-    const mag = Math.pow(10, freqData[i] / 20);
-    wSum += i * mag; sum += mag;
+  if (rms > 0.005) {
+    angleBuf[angleBufIdx % ANGLE_BUF_SIZE] = targetAngle;
+    angleBufIdx++;
+    const sorted = [...angleBuf].sort((a, b) => a - b);
+    const medAngle = sorted[Math.floor(ANGLE_BUF_SIZE / 2)];
+
+    smoothAngle += (medAngle - smoothAngle) * 0.25;
+    smoothConf += (confidence - smoothConf) * 0.25;
+
+    // UI Güncellemeleri
+    document.getElementById('needlePivot').style.transform = `rotate(${smoothAngle - 90}deg)`;
+    document.getElementById('angleNum').textContent = Math.round(smoothAngle);
+    document.getElementById('angleNum').classList.toggle('hot', smoothConf > 0.25);
+    document.getElementById('confFill').style.width = Math.round(smoothConf * 100) + '%';
+    
+    document.getElementById('sv1').textContent = '%' + Math.round(smoothConf * 100);
+    document.getElementById('sv2').textContent = maxPeakLevel + ' Pts';
+
+    // Yön Etiketleri
+    document.getElementById('dirLabel').textContent = dirText(smoothAngle);
+
+    // E-Tablo ve Geçmiş Tetikleyicisi (Hızlı tepki, sıfır kayıp)
+    if (smoothConf > 0.18 && currentVolInt > 2) {
+      const now = Date.now();
+      if (now - lastLogTs > 750) {
+        lastLogTs = now;
+        pushToGoogleSheet(smoothAngle, smoothConf);
+      }
+    }
+  } else {
+    document.getElementById('angleNum').classList.remove('hot');
+    document.getElementById('statusTxt').textContent = 'Dinleniyor...';
+    document.getElementById('confFill').style.width = '0%';
   }
-  const centroid = sum > 0 ? wSum / sum : 30;
-  let normCentroid = (centroid - 5) / (65 - 5);
-  normCentroid = Math.max(0, Math.min(1, normCentroid));
 
-  // Akustik imzayı pürüzsüz radar açısına dönüştür
-  let targetAngle = 15 + (normCentroid * 150);
+  loopTimer = setTimeout(mainLoop, 80);
+}
 
-  // 3. Güven Skoru Optimizasyonu (Kayıt tetiklenmesi için alt limit güvenceye alınır)
-  let confidence = Math.min(0.95, Math.max(0.38, rms * 14));
+function dirText(a) {
+  if (a < 35)  return '◀◀ Sol Yön';
+  if (a < 75)  return '◀ Ön Sol Sektör';
+  if (a < 105) return '↑ Doğrudan Karşı';
+  if (a < 145) return 'Ön Sağ Sektör ▶';
+  return 'Sağ Yön ▶▶';
+}
+
+function drawSpectrumGraph(freqData) {
+  const W = specCvs.width, H = specCvs.height;
+  specCtx.clearRect(0,0,W,H);
+  if(!freqData) return;
+
+  const bins = Math.min(freqData.length, 100);
+  const step = W / bins;
+  specCtx.fillStyle = 'rgba(0, 200, 255, 0.4)';
   
-  return { angle: targetAngle, confidence: confidence };
+  for (let i = 0; i < bins; i++) {
+    const norm = (freqData[i] + 140) / 140;
+    const barH = Math.max(2, norm * H);
+    specCtx.fillRect(i * step, H - barH, step - 1, barH);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  ANA DÖNGÜ VE UI GÜNCELLEMELERİ
-// ════════════════════════════
+//  BULUT VE GEÇMİŞ LİSTESİ YÖNETİMİ
+// ══════════════════════════════════════════════
+function pushToGoogleSheet(angle, conf) {
+  const timeStr = new Date().toLocaleTimeString('tr-TR');
+  const rAngle = Math.round(angle);
+  const rConf = Math.round(conf * 100);
+
+  const entry = { time: timeStr, angle: rAngle, conf: rConf };
+  historyData.unshift(entry);
+  if(historyData.length > 30) historyData.pop();
+  
+  totalSaved++;
+  document.getElementById('sv3').textContent = totalSaved;
+  updateHistoryUI();
+
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(() => {
+        const t = document.getElementById('toast');
+        t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200);
+      })
+      .kaydetSesYonu(rAngle, (conf).toFixed(3), 0, timeStr);
+  }
+}
+
+function updateHistoryUI() {
+  const container = document.getElementById('histList');
+  if(historyData.length === 0) {
+    container.innerHTML = '<div class="empty-hint">Veri bekleniyor...</div>';
+    return;
+  }
+  container.innerHTML = historyData.map(h => `
+    <div class="h-row">
+      <span class="h-time">${h.time}</span>
+      <span class="h-angle">${h.angle}°</span>
+      <span class="h-conf">%${h.conf} Güven</span>
+    </div>
+  `).join('');
+}
+
+function clearLogs() {
+  historyData = []; totalSaved = 0; maxPeakLevel = 0;
+  document.getElementById('sv3').textContent = '0';
+  document.getElementById('volNum').textContent = '0 / 100 (Zirve: 0)';
+  document.getElementById('sv2').textContent = '—';
+  updateHistoryUI();
+}
+
+// ══════════════════════════════════════════════
+//  MİKROFON SÜRÜCÜSÜ VE DONANIM BAĞLANTI AYARI
+// ══════════════════════════════════════════════
+async function toggleMic() {
+  if (isRunning) {
+    isRunning = false;
+    clearTimeout(loopTimer);
+    if(stream) stream.getTracks().forEach(t => t.stop());
+    if(audioCtx) audioCtx.close();
+    
+    document.getElementById('btnMain').textContent = '▶ Mikrofonu Başlat';
+    document.getElementById('btnMain').classList.remove('stop');
+    document.getElementById('statusBadge').classList.remove('live');
+    document.getElementById('statusTxt').textContent = 'Hazır';
+    document.getElementById('volFill').style.width = '0%';
+    document.getElementById('volNum').textContent = '0 / 100 (Zirve: 0)';
+    document.getElementById('sv1').textContent = '—';
+    document.getElementById('sv2').textContent = '—';
+    document.getElementById('angleNum').textContent = '--';
+    document.getElementById('dirLabel').textContent = '—';
+    return;
+  }
+
+  const btn = document.getElementById('btnMain');
+  btn.textContent = 'Bağlanıyor...';
+
+  try {
+    // Stereo (Çift Kanal) çekebilmek için donanım filtrelerini kapatıp kanal sayısını 2 istiyoruz.
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 }, sampleRate: 48000 }
+    });
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    source = audioCtx.createMediaStreamSource(stream);
+    
+    const track = stream.getAudioTracks()[0];
+    const settings = track.getSettings();
+    isStereo = settings.channelCount >= 2;
+
+    if (isStereo) {
+      splitter = audioCtx.createChannelSplitter(2);
+      source.connect(splitter);
+
+      analyserL = audioCtx.createAnalyser();
+      analyserR = audioCtx.createAnalyser();
+      analyserL.fftSize = 2048;
+      analyserR.fftSize = 2048;
+      analyserL.smoothingTimeConstant = 0.2;
+      analyserR.smoothingTimeConstant = 0.2;
+
+      splitter.connect(analyserL, 0); // Sol kanal mikrofonu
+      splitter.connect(analyserR, 1); // Sağ kanal mikrofonu
+
+      document.getElementById('modeTag').textContent = 'STEREO AKTİF';
+      document.getElementById('modeTag').style.color = 'var(--accent3)';
+      document.getElementById('modeTag').style.borderColor = 'var(--accent3)';
+    } else {
+      analyserM = audioCtx.createAnalyser();
+      analyserM.fftSize = 2048;
+      analyserM.smoothingTimeConstant = 0.2;
+      source.connect(analyserM);
+
+      document.getElementById('modeTag').textContent = 'MONO (TON ANALİZİ)';
+      document.getElementById('modeTag').style.color = 'var(--warn)';
+      document.getElementById('modeTag').style.borderColor = 'var(--warn)';
+    }
+
+    isRunning = true;
+    btn.textContent = '■ Durdur';
+    btn.classList.add('stop');
+    document.getElementById('statusBadge').classList.add('live');
+    document.getElementById('statusTxt').textContent = 'AKUSTİK AKTİF';
+
+    mainLoop();
+
+  } catch (err) {
+    alert('Mikrofon bağlantı hatası! İzinleri kontrol edin. Hata: ' + err.message);
+    btn.textContent = '▶ Mikrofonu Başlat';
+  }
+}
+</script>
+</body>
+</html>
