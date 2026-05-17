@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SonicTrack — Ses Yönü Bulucu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: rgba(255,255,255,0.07);
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #ff6b6b;
+      --text: #f0f0f5;
+      --muted: #6b6b80;
+      --green: #00d68f;
+      --font-mono: 'Space Mono', monospace;
+      --font-sans: 'DM Sans', sans-serif;
+      --radius: 16px;
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 20px calc(var(--safe-bottom) + 20px);
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 52px 0 24px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: white; }
+    .logo-text {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .logo-text span { color: var(--accent); }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      transition: all 0.3s;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s;
+    }
+    .status-pill.active { color: var(--green); border-color: rgba(0,214,143,0.3); }
+    .status-pill.active .status-dot {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    /* ── COMPASS RING ── */
+    .compass-wrap {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 12px auto 24px;
+    }
+
+    .compass-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, var(--surface) 100%);
+      overflow: hidden;
+    }
+
+    /* Rotating sweep line */
+    .sweep-canvas {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+    }
+
+    /* Direction ticks */
+    .tick-ring {
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+    }
+
+    /* Cardinal labels */
+    .cardinal {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      transform: translate(-50%, -50%);
+      letter-spacing: 1px;
+    }
+    .cardinal.N { top: 18px; left: 50%; color: var(--accent); }
+    .cardinal.S { bottom: 4px; left: 50%; }
+    .cardinal.E { right: 4px; top: 50%; }
+    .cardinal.W { left: 18px; top: 50%; }
+
+    /* Inner circle */
+    .compass-inner {
+      position: absolute;
+      inset: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+    }
+
+    /* Sonar rings */
+    .sonar-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(0,229,255,0.15);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+    .sonar-ring.active {
+      animation: sonar-expand 2s ease-out infinite;
+    }
+    .sonar-ring:nth-child(2) { animation-delay: 0.7s; }
+    .sonar-ring:nth-child(3) { animation-delay: 1.4s; }
+    @keyframes sonar-expand {
+      0% { width: 40px; height: 40px; opacity: 0.8; border-color: rgba(0,229,255,0.4); }
+      100% { width: 180px; height: 180px; opacity: 0; border-color: rgba(0,229,255,0); }
+    }
+
+    /* Pointer needle */
+    .needle-group {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform-origin: 0 0;
+      transition: transform 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .needle {
+      position: absolute;
+      width: 3px;
+      background: linear-gradient(to top, transparent, var(--accent));
+      bottom: 0;
+      left: -1.5px;
+      border-radius: 3px 3px 0 0;
+      height: 90px;
+      transform-origin: bottom center;
+      filter: drop-shadow(0 0 6px var(--accent));
+    }
+    .needle-tip {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      top: -5px;
+      left: -5px;
+      box-shadow: 0 0 12px var(--accent), 0 0 24px rgba(0,229,255,0.4);
+    }
+    .needle-base {
+      position: absolute;
+      width: 14px; height: 14px;
+      background: var(--surface2);
+      border: 2px solid var(--accent2);
+      border-radius: 50%;
+      bottom: -7px;
+      left: -7px;
+    }
+
+    /* Center cross-hair dot */
+    .center-dot {
+      width: 8px; height: 8px;
+      background: var(--accent2);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent2);
+      z-index: 10;
+    }
+
+    /* Confidence arc (drawn by canvas) */
+    #arcCanvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* ── ANGLE DISPLAY ── */
+    .angle-display {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .angle-value {
+      font-family: var(--font-mono);
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: -2px;
+      transition: color 0.3s;
+    }
+    .angle-value.hot { color: var(--accent); }
+    .angle-unit {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      color: var(--muted);
+    }
+    .angle-label {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .direction-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 6px;
+      min-height: 20px;
+      transition: all 0.3s;
+    }
+
+    /* ── METRICS GRID ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    .metric-card.highlight { border-color: rgba(0,229,255,0.3); }
+    .metric-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .metric-value.green { color: var(--green); }
+    .metric-value.accent { color: var(--accent); }
+    .metric-value.warn { color: #ffb347; }
+
+    /* ── WAVEFORM ── */
+    .waveform-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .waveform-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 10px;
+    }
+    #waveCanvas {
+      width: 100%;
+      height: 60px;
+      display: block;
+    }
+
+    /* ── HISTORY LOG ── */
+    .history-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 24px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .history-title {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+    .history-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent2);
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 8px;
+      background: var(--surface2);
+      border-radius: 8px;
+      animation: fade-in 0.3s ease;
+    }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .history-time { color: var(--muted); flex-shrink: 0; }
+    .history-angle { color: var(--accent); font-weight: 700; min-width: 48px; }
+    .history-conf { color: var(--muted); font-size: 10px; margin-left: auto; }
+    .history-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      min-width: 20px;
+      transition: width 0.3s;
+    }
+
+    /* ── BUTTON ── */
+    .btn-start {
+      width: 100%;
+      padding: 18px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      background: linear-gradient(135deg, var(--accent2), #5b21b6);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .btn-start::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-start:hover::before { opacity: 1; }
+    .btn-start:active { transform: scale(0.98); }
+    .btn-start:disabled {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-clear {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clear:active { background: var(--surface); }
+
+    /* ── SAVE FLASH ── */
+    .save-flash {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,214,143,0.15);
+      border: 1px solid rgba(0,214,143,0.3);
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .save-flash.show { opacity: 1; transform: translateY(0); }
+
+    /* Scrollbar */
+    .history-list::-webkit-scrollbar { width: 3px; }
+    .history-list::-webkit-scrollbar-track { background: transparent; }
+    .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      padding: 16px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="save-flash" id="saveFlash">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  Kaydedildi
+</div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 3c-1.2 5.4-2 8-2 12a2 2 0 0 0 4 0c0-4-.8-6.6-2-12zm-6.5 5.5a10 10 0 0 0 0 7M18.5 8.5a10 10 0 0 1 0 7"/></svg>
+      </div>
+      <div class="logo-text">Sonic<span>Track</span></div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Hazır</span>
+    </div>
+  </div>
+
+  <!-- COMPASS -->
+  <div class="compass-wrap">
+    <div class="compass-outer" id="compassOuter">
+      <!-- Sonar rings -->
+      <div class="sonar-ring" id="sonar1"></div>
+      <div class="sonar-ring" id="sonar2"></div>
+      <div class="sonar-ring" id="sonar3"></div>
+
+      <!-- Arc canvas -->
+      <canvas id="arcCanvas" width="280" height="280"></canvas>
+
+      <!-- Tick marks -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 280 280">
+        <g id="ticks"></g>
+      </svg>
+
+      <!-- Cardinal labels -->
+      <div class="cardinal N">N</div>
+      <div class="cardinal S">S</div>
+      <div class="cardinal E">E</div>
+      <div class="cardinal W">W</div>
+
+      <!-- Inner ring -->
+      <div class="compass-inner">
+        <div class="center-dot"></div>
+        <!-- Needle -->
+        <div class="needle-group" id="needleGroup" style="transform: rotate(0deg);">
+          <div class="needle">
+            <div class="needle-tip"></div>
+          </div>
+          <div class="needle-base"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sweep canvas (sonar effect) -->
+    <canvas class="sweep-canvas" id="sweepCanvas" width="280" height="280"></canvas>
+  </div>
+
+  <!-- ANGLE -->
+  <div class="angle-display">
+    <div>
+      <span class="angle-value" id="angleVal">--</span>
+      <span class="angle-unit">°</span>
+    </div>
+    <div class="angle-label">Ses Açısı</div>
+    <div class="direction-text" id="dirText">—</div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric-card" id="metricConf">
+      <div class="metric-label">Güven</div>
+      <div class="metric-value accent" id="confVal">—</div>
+    </div>
+    <div class="metric-card" id="metricDelay">
+      <div class="metric-label">Gecikme</div>
+      <div class="metric-value" id="delayVal">—</div>
+    </div>
+    <div class="metric-card" id="metricCount">
+      <div class="metric-label">Kayıt</div>
+      <div class="metric-value green" id="countVal">0</div>
+    </div>
+  </div>
+
+  <!-- WAVEFORM -->
+  <div class="waveform-wrap">
+    <div class="waveform-label">Dalga Formu — Sol / Sağ Kanal</div>
+    <canvas id="waveCanvas" height="60"></canvas>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-wrap">
+    <div class="history-header">
+      <div class="history-title">Algılama Geçmişi</div>
+      <div class="history-count" id="histCount">0 kayıt</div>
+    </div>
+    <div class="history-list" id="histList">
+      <div class="empty-state">Henüz kayıt yok</div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <button class="btn-start" id="btnStart" onclick="startMic()">Mikrofonu Başlat</button>
+  <button class="btn-clear" onclick="clearHistory()">Geçmişi Temizle</button>
+
+</div>
+
+<script>
+// ── STATE ──
+let audioCtx, analyserL, analyserR, sourceNode;
+let isRunning = false;
+let animFrame;
+let historyData = [];
+let totalSaved = 0;
+let sweepAngle = 0;
+let currentAngle = 90;
+let smoothedAngle = 90;
+let smoothedConf = 0;
+
+// ── DRAW TICKS ──
+(function drawTicks() {
+  const g = document.getElementById('ticks');
+  const cx = 140, cy = 140, r = 130;
+  for (let i = 0; i < 72; i++) {
+    const deg = (i * 5) - 90;
+    const rad = deg * Math.PI / 180;
+    const isMajor = i % 9 === 0;
+    const isMid = i % 3 === 0;
+    const len = isMajor ? 14 : isMid ? 9 : 5;
+    const x1 = cx + r * Math.cos(rad);
+    const y1 = cy + r * Math.sin(rad);
+    const x2 = cx + (r - len) * Math.cos(rad);
+    const y2 = cy + (r - len) * Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', isMajor ? 'rgba(0,229,255,0.5)' : 'rgba(255,255,255,0.12)');
+    line.setAttribute('stroke-width', isMajor ? '1.5' : '0.8');
+    g.appendChild(line);
+  }
+})();
+
+// ── SWEEP SONAR ──
+const sweepCvs = document.getElementById('sweepCanvas');
+const sweepCtx = sweepCvs.getContext('2d');
+
+function drawSweep() {
+  sweepCtx.clearRect(0, 0, 280, 280);
+  if (!isRunning) { requestAnimationFrame(drawSweep); return; }
+  sweepAngle += 2;
+  const cx = 140, cy = 140, rad = sweepAngle * Math.PI / 180;
+  const grad = sweepCtx.createConicalGradient ? null : null;
+  // Draw sweep arc
+  sweepCtx.save();
+  sweepCtx.beginPath();
+  sweepCtx.moveTo(cx, cy);
+  sweepCtx.arc(cx, cy, 130, rad - 0.7, rad);
+  sweepCtx.closePath();
+  const fill = sweepCtx.createLinearGradient(
+    cx + Math.cos(rad - 0.35) * 65, cy + Math.sin(rad - 0.35) * 65,
+    cx, cy
+  );
+  fill.addColorStop(0, 'rgba(0,229,255,0.15)');
+  fill.addColorStop(1, 'rgba(0,229,255,0)');
+  sweepCtx.fillStyle = fill;
+  sweepCtx.fill();
+  sweepCtx.restore();
+  // Sweep line
+  sweepCtx.beginPath();
+  sweepCtx.moveTo(cx, cy);
+  sweepCtx.lineTo(cx + 130 * Math.cos(rad), cy + 130 * Math.sin(rad));
+  sweepCtx.strokeStyle = 'rgba(0,229,255,0.5)';
+  sweepCtx.lineWidth = 1.5;
+  sweepCtx.stroke();
+  requestAnimationFrame(drawSweep);
+}
+drawSweep();
+
+// ── ARC CONFIDENCE ──
+const arcCvs = document.getElementById('arcCanvas');
+const arcCtx = arcCvs.getContext('2d');
+
+function drawArc(angleDeg, confidence) {
+  arcCtx.clearRect(0, 0, 280, 280);
+  if (confidence < 0.05) return;
+  const cx = 140, cy = 140, r = 118;
+  const span = (Math.PI / 6) * confidence;
+  const startRad = ((angleDeg - 90) * Math.PI / 180) - span;
+  const endRad = ((angleDeg - 90) * Math.PI / 180) + span;
+  arcCtx.beginPath();
+  arcCtx.arc(cx, cy, r, startRad, endRad);
+  const alpha = Math.min(0.6, confidence);
+  arcCtx.strokeStyle = `rgba(0,229,255,${alpha})`;
+  arcCtx.lineWidth = 3;
+  arcCtx.lineCap = 'round';
+  arcCtx.stroke();
+}
+
+// ── WAVEFORM ──
+const waveCvs = document.getElementById('waveCanvas');
+const waveCtx = waveCvs.getContext('2d');
+let dataLBuffer = new Float32Array(512);
+let dataRBuffer = new Float32Array(512);
+
+function drawWave() {
+  const W = waveCvs.offsetWidth * window.devicePixelRatio || 380;
+  const H = 120;
+  waveCvs.width = W;
+  waveCvs.height = H;
+  waveCtx.clearRect(0, 0, W, H);
+  const mid = H / 2;
+  const step = W / dataLBuffer.length;
+
+  // Left channel (cyan)
+  waveCtx.beginPath();
+  for (let i = 0; i < dataLBuffer.length; i++) {
+    const x = i * step;
+    const y = mid + dataLBuffer[i] * (H * 0.4);
+    i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+  }
+  waveCtx.strokeStyle = 'rgba(0,229,255,0.7)';
+  waveCtx.lineWidth = 1.5;
+  waveCtx.stroke();
+
+  // Right channel (purple)
+  waveCtx.beginPath();
+  for (let i = 0; i < dataRBuffer.length; i++) {
+    const x = i * step;
+    const y = mid + dataRBuffer[i] * (H * 0.4);
+    i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+  }
+  waveCtx.strokeStyle = 'rgba(124,58,237,0.7)';
+  waveCtx.lineWidth = 1.5;
+  waveCtx.stroke();
+}
+
+// ── DIRECTION TEXT ──
+function getDirectionLabel(angle) {
+  if (angle < 15) return 'Sol Ön';
+  if (angle < 40) return 'Sol';
+  if (angle < 70) return 'Sol Arka';
+  if (angle < 110) return angle < 90 ? 'Doğrudan Karşı ◀' : 'Doğrudan Karşı ▶';
+  if (angle < 140) return 'Sağ Arka';
+  if (angle < 165) return 'Sağ';
+  return 'Sağ Ön';
+}
+
+// ── NEEDLE UPDATE ──
+function updateNeedle(angleDeg, confidence) {
+  // Smooth the angle
+  const diff = angleDeg - smoothedAngle;
+  smoothedAngle += diff * 0.25;
+  smoothedConf += (confidence - smoothedConf) * 0.2;
+
+  const rotate = smoothedAngle - 90;
+  document.getElementById('needleGroup').style.transform = `rotate(${rotate}deg)`;
+  document.getElementById('angleVal').textContent = Math.round(smoothedAngle);
+
+  const confPct = Math.round(smoothedConf * 100);
+  document.getElementById('confVal').textContent = confPct + '%';
+
+  const confCard = document.getElementById('metricConf');
+  confCard.classList.toggle('highlight', smoothedConf > 0.4);
+
+  document.getElementById('angleVal').classList.toggle('hot', smoothedConf > 0.3);
+  document.getElementById('dirText').textContent = getDirectionLabel(smoothedAngle);
+
+  drawArc(smoothedAngle, smoothedConf);
+  drawWave();
+}
+
+// ── CROSS-CORRELATION ──
+function calcDirection() {
+  if (!isRunning) return;
+
+  const BUF = analyserL.frequencyBinCount;
+  const dL = new Float32Array(BUF);
+  const dR = new Float32Array(BUF);
+  analyserL.getFloatTimeDomainData(dL);
+  analyserR.getFloatTimeDomainData(dR);
+
+  dataLBuffer = dL;
+  dataRBuffer = dR;
+
+  // Energy gate
+  let energy = 0;
+  for (let i = 0; i < BUF; i++) energy += dL[i] * dL[i];
+  if (energy < 0.008) {
+    document.getElementById('statusText').textContent = 'Dinleniyor...';
+    return;
+  }
+
+  document.getElementById('statusText').textContent = 'Algılandı!';
+
+  // GCC-PHAT inspired cross-correlation with wider search
+  const SEARCH = 20;
+  let maxCorr = -Infinity, bestDelay = 0;
+  for (let delay = -SEARCH; delay <= SEARCH; delay++) {
+    let corr = 0;
+    for (let i = SEARCH; i < BUF - SEARCH; i++) {
+      const ri = i + delay;
+      if (ri >= 0 && ri < BUF) corr += dL[i] * dR[ri];
+    }
+    if (corr > maxCorr) { maxCorr = corr; bestDelay = delay; }
+  }
+
+  // Normalize confidence 0..1
+  const rawConf = Math.max(0, Math.min(1, maxCorr / (energy * 0.8)));
+
+  // Map delay → angle (0–180°)
+  let angle = 90 + (bestDelay * (90 / SEARCH));
+  angle = Math.max(0, Math.min(180, angle));
+
+  document.getElementById('delayVal').textContent = bestDelay + ' smp';
+  document.getElementById('delayVal').className = 'metric-value' +
+    (Math.abs(bestDelay) > 10 ? ' warn' : '');
+
+  updateNeedle(angle, rawConf);
+
+  // Only log strong, confident events
+  if (rawConf > 0.15 && Math.abs(bestDelay) > 1) {
+    logEvent(angle, rawConf, bestDelay);
+  }
+}
+
+// ── EVENT LOG ──
+let lastLogTime = 0;
+function logEvent(angle, conf, delay) {
+  const now = Date.now();
+  if (now - lastLogTime < 600) return;
+  lastLogTime = now;
+
+  const entry = {
+    time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    angle: Math.round(angle),
+    conf: Math.round(conf * 100),
+    delay
+  };
+  historyData.unshift(entry);
+  if (historyData.length > 30) historyData.pop();
+
+  totalSaved++;
+  document.getElementById('countVal').textContent = totalSaved;
+  document.getElementById('histCount').textContent = historyData.length + ' kayıt';
+  renderHistory();
+
+  // Save to Google Sheets
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function() { showSaveFlash(); })
+      .withFailureHandler(function(e) { console.warn('Kayıt hatası:', e); })
+      .kaydetSesYonu(entry.angle, (conf).toFixed(3), delay, entry.time);
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('histList');
+  if (historyData.length === 0) {
+    list.innerHTML = '<div class="empty-state">Henüz kayıt yok</div>';
+    return;
+  }
+  list.innerHTML = historyData.slice(0, 15).map(e => `
+    <div class="history-row">
+      <span class="history-time">${e.time}</span>
+      <span class="history-angle">${e.angle}°</span>
+      <div class="history-bar" style="width: ${e.conf}px;"></div>
+      <span class="history-conf">${e.conf}%</span>
+    </div>
+  `).join('');
+}
+
+function clearHistory() {
+  historyData = [];
+  renderHistory();
+  document.getElementById('histCount').textContent = '0 kayıt';
+}
+
+function showSaveFlash() {
+  const el = document.getElementById('saveFlash');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ── SONAR ACTIVATE ──
+function activateSonar() {
+  document.getElementById('sonar1').classList.add('active');
+  document.getElementById('sonar2').classList.add('active');
+  document.getElementById('sonar3').classList.add('active');
+}
+
+// ── MAIN LOOP ──
+function mainLoop() {
+  calcDirection();
+  animFrame = setTimeout(mainLoop, 120); // ~8 fps is enough for audio localization
+}
+
+// ── MICROPHONE START ──
+async function startMic() {
+  if (isRunning) return;
+
+  const btn = document.getElementById('btnStart');
+  const pill = document.getElementById('statusPill');
+  btn.textContent = 'Bağlanıyor...';
+  btn.disabled = true;
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    alert('Bu cihaz mikrofon erişimini desteklemiyor. HTTPS gereklidir.');
+    btn.disabled = false;
+    btn.textContent = 'Mikrofonu Başlat';
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: { ideal: 2 },
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 48000
+      }
+    });
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+
+    // iOS Safari: context must be resumed after user gesture
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    const splitter = audioCtx.createChannelSplitter(2);
+    sourceNode.connect(splitter);
+
+    analyserL = audioCtx.createAnalyser();
+    analyserR = audioCtx.createAnalyser();
+    analyserL.fftSize = 2048;
+    analyserR.fftSize = 2048;
+    analyserL.smoothingTimeConstant = 0.3;
+    analyserR.smoothingTimeConstant = 0.3;
+
+    splitter.connect(analyserL, 0);
+    splitter.connect(analyserR, 1);
+
+    isRunning = true;
+    activateSonar();
+
+    pill.classList.add('active');
+    document.getElementById('statusText').textContent = 'Aktif';
+    btn.textContent = '● Sistem Aktif';
+    btn.style.background = 'var(--surface2)';
+    btn.style.border = '1px solid rgba(0,229,255,0.3)';
+    btn.style.color = 'var(--accent)';
+
+    mainLoop();
+
+  } catch (err) {
+    alert('Mikrofon erişimi reddedildi.\n\nAyarlar > Gizlilik > Mikrofon bölümünden erişim izni verin.\n\nHata: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Mikrofonu Başlat';
+  }
+}
+
+// Init wave draw
+drawWave();
+</script>
+</body>
+</html>
