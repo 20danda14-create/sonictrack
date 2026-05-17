@@ -288,6 +288,45 @@ body::after {
 }
 .alert-box.show { display:block; }
 
+/* ── ORIENTATION PANEL ── */
+.orient-panel {
+  background:var(--s1); border:1px solid var(--border); border-radius:var(--r);
+  padding:10px 14px; display:flex; align-items:center; gap:12px;
+}
+.orient-viz {
+  flex-shrink:0; width:44px; height:44px; position:relative;
+}
+#orientCanvas { width:44px; height:44px; display:block; }
+.orient-info { flex:1; min-width:0; }
+.orient-mode {
+  font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+  transition: color .4s;
+}
+.orient-mode.horiz { color:var(--a); }
+.orient-mode.vert  { color:var(--a3); }
+.orient-mode.flat  { color:var(--warn); }
+.orient-angles {
+  font-family:var(--mono); font-size:9px; color:var(--muted);
+  margin-top:3px; letter-spacing:.5px;
+}
+.orient-perm {
+  font-family:var(--mono); font-size:9px; color:var(--warn);
+  margin-top:3px;
+  display:none;
+}
+.orient-perm.show { display:block; }
+.btn-perm {
+  font-family:var(--mono); font-size:9px; color:var(--a);
+  background:transparent; border:1px solid var(--border2);
+  border-radius:5px; padding:3px 8px; cursor:pointer;
+  margin-top:5px; transition:all .2s;
+}
+.btn-perm:active { background:rgba(0,210,255,0.1); }
+
+/* ── RADAR LABEL TRANSITIONS ── */
+.rlabel { transition: opacity .4s, color .4s; }
+
 /* scrollbar */
 ::-webkit-scrollbar { width:3px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -337,6 +376,21 @@ body::after {
   <!-- ALERT -->
   <div class="alert-box" id="alertBox"></div>
 
+  <!-- ORIENTATION PANEL -->
+  <div class="orient-panel">
+    <div class="orient-viz">
+      <canvas id="orientCanvas" width="88" height="88"></canvas>
+    </div>
+    <div class="orient-info">
+      <div class="orient-mode" id="orientMode">YÖN BEKLENİYOR</div>
+      <div class="orient-angles" id="orientAngles">α:— β:— γ:—</div>
+      <div class="orient-perm" id="orientPerm">iOS izni gerekli</div>
+      <button class="btn-perm" id="btnPerm" onclick="requestOrientPerm()" style="display:none">
+        📐 Yönelim İzni Ver
+      </button>
+    </div>
+  </div>
+
   <!-- VOL -->
   <div class="vol-box">
     <div class="vol-hdr">
@@ -375,10 +429,10 @@ body::after {
           </linearGradient>
         </defs>
       </svg>
-      <div class="rlabel N">ÖN</div>
-      <div class="rlabel S">ARKA</div>
-      <div class="rlabel W">SOL</div>
-      <div class="rlabel E">SAĞ</div>
+      <div class="rlabel N" id="rl_N">ÖN</div>
+      <div class="rlabel S" id="rl_S">ARKA</div>
+      <div class="rlabel W" id="rl_W">SOL</div>
+      <div class="rlabel E" id="rl_E">SAĞ</div>
     </div>
   </div>
 
@@ -732,18 +786,6 @@ function mainLoop() {
   }
 }
 
-// ─── DIRECTION TEXT ───────────────────────────────────────────────────────────
-function dirText(a) {
-  if (!isStereo) return 'MONO — YÖN SINIRLI';
-  if (a < 22)  return '◀◀ KESKİN SOL';
-  if (a < 60)  return '◀ SOL ÖN';
-  if (a < 80)  return '↖ HAFİF SOL';
-  if (a < 100) return '↑ MERKEZ ÖN';
-  if (a < 120) return '↗ HAFİF SAĞ';
-  if (a < 158) return 'SAĞ ÖN ▶';
-  return 'KESKİN SAĞ ▶▶';
-}
-
 // ─── LOG ENTRY ────────────────────────────────────────────────────────────────
 function logEntry(angle, conf, vol) {
   const timeStr = new Date().toLocaleTimeString('tr-TR');
@@ -1000,6 +1042,264 @@ function stopMic() {
   document.getElementById('confFill').style.width = '0%';
   document.getElementById('angleNum').classList.remove('hot');
   drawRadar(90, 0);
+}
+
+// ─── ORIENTATION SYSTEM ───────────────────────────────────────────────────────
+/*
+  DeviceOrientationEvent axes (portrait, screen facing you):
+    alpha (α) : compass heading 0-360 (yaw)
+    beta  (β) : front-back tilt  -180..180
+                β ≈  0   → phone flat on table face-up
+                β ≈  90  → phone upright (portrait, you look at screen)
+                β ≈ -90  → phone upside-down portrait
+    gamma (γ) : left-right tilt  -90..90
+                γ ≈  0   → phone portrait, no side tilt
+                γ ≈  90  → phone landscape right-side down (flat, face up, rotated)
+
+  PLANE DETECTION (what the radar shows):
+    |β| < 25°            → FLAT (face up/down) : vertical plane (Up/Down/Front/Back)
+    |β| > 65°            → UPRIGHT              : horizontal plane (Left/Right/Front/Back)
+    25° ≤ |β| < 65°     → TILTED               : mixed label set
+
+  AUDIO AXIS MAPPING:
+    - ITD/ILD from microphone gives LEFT↔RIGHT separation.
+    - When UPRIGHT:  horizontal spread → Left/Right/Front/Back labels (normal stereo logic)
+    - When FLAT:     horizontal spread of device mics → YUKARIDAN bakış açısı
+                     Front of phone (camera edge) = "ÖN", speaker end = "ARKA"
+                     Left/Right still valid
+    - When TILTED:   interpolate between the two
+*/
+
+const OC = document.getElementById('orientCanvas');
+const OCX = OC.getContext('2d');
+
+// Current orientation state
+let orient = { alpha: 0, beta: 0, gamma: 0, valid: false };
+let orientMode = 'upright'; // 'upright' | 'flat' | 'tilted'
+let orientSmooth = { beta: 0, gamma: 0 };
+
+// Radar label sets
+const LABELS = {
+  upright: { N:'ÖN',   S:'ARKA',  W:'SOL',   E:'SAĞ'  },
+  flat:    { N:'ÖN',   S:'ARKA',  W:'SOL',   E:'SAĞ'  },
+  tilted:  { N:'ÖN',   S:'ARKA',  W:'SOL',   E:'SAĞ'  },
+  // flat specifically means device lying down; front camera edge = north
+  flat_v:  { N:'YUKARI', S:'AŞAĞI', W:'SOL', E:'SAĞ'  },
+};
+
+function updateRadarLabels(mode) {
+  const set = mode === 'flat' ? LABELS.flat_v : LABELS.upright;
+  document.getElementById('rl_N').textContent = set.N;
+  document.getElementById('rl_S').textContent = set.S;
+  document.getElementById('rl_W').textContent = set.W;
+  document.getElementById('rl_E').textContent = set.E;
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function drawOrientWidget(beta, gamma, mode) {
+  const W = 88, H = 88, cx = 44, cy = 44;
+  OCX.clearRect(0, 0, W, H);
+
+  // Phone silhouette
+  const pw = 18, ph = 30, pr = 3;
+  const px = cx - pw/2, py = cy - ph/2;
+
+  // Rotate silhouette based on beta (0=flat, 90=upright)
+  // We show a side-view that tilts
+  OCX.save();
+  OCX.translate(cx, cy);
+
+  // tilt angle for visual: β=90 → 0° rotation (upright = standing), β=0 → 90° (flat = lying)
+  const tiltDeg = 90 - Math.max(-90, Math.min(90, beta));
+  OCX.rotate((tiltDeg * Math.PI) / 180);
+
+  // Phone body
+  roundRectPath(OCX, -pw/2, -ph/2, pw, ph, pr);
+  const col = mode === 'upright' ? 'rgba(0,210,255,0.7)' :
+               mode === 'flat'   ? 'rgba(0,255,170,0.7)' :
+                                   'rgba(255,200,0,0.7)';
+  OCX.strokeStyle = col;
+  OCX.lineWidth = 1.5;
+  OCX.stroke();
+  OCX.fillStyle = col.replace('0.7', '0.07');
+  OCX.fill();
+
+  // Screen line
+  OCX.strokeStyle = col.replace('0.7', '0.3');
+  OCX.lineWidth = 0.8;
+  roundRectPath(OCX, -pw/2 + 2, -ph/2 + 3, pw - 4, ph - 6, 1);
+  OCX.stroke();
+
+  // Home button dot
+  OCX.beginPath();
+  OCX.arc(0, ph/2 - 3, 1.5, 0, Math.PI * 2);
+  OCX.fillStyle = col;
+  OCX.fill();
+
+  // Arrow showing up direction
+  OCX.strokeStyle = 'rgba(0,210,255,0.5)';
+  OCX.lineWidth = 1;
+  OCX.beginPath();
+  OCX.moveTo(0, -ph/2 - 4);
+  OCX.lineTo(0, -ph/2 - 10);
+  OCX.stroke();
+  OCX.beginPath();
+  OCX.moveTo(-3, -ph/2 - 8);
+  OCX.lineTo(0, -ph/2 - 12);
+  OCX.lineTo(3, -ph/2 - 8);
+  OCX.stroke();
+
+  OCX.restore();
+
+  // Side tilt indicator (gamma) — small arc at bottom
+  if (Math.abs(gamma) > 5) {
+    OCX.save();
+    OCX.translate(cx, cy + 16);
+    const gArc = (gamma / 90) * (Math.PI / 3);
+    OCX.beginPath();
+    OCX.arc(0, 0, 10, -Math.PI/2 - gArc, -Math.PI/2, gamma < 0);
+    OCX.strokeStyle = 'rgba(255,200,0,0.5)';
+    OCX.lineWidth = 1.5;
+    OCX.stroke();
+    OCX.restore();
+  }
+}
+
+function classifyOrientation(beta) {
+  const ab = Math.abs(beta);
+  if (ab > 65)  return 'upright';
+  if (ab < 25)  return 'flat';
+  return 'tilted';
+}
+
+function getModeLabel(mode) {
+  if (mode === 'upright') return 'DİK DURUŞ — YAT. DÜZLEM';
+  if (mode === 'flat')    return 'YATAY DURUŞ — DİK. DÜZLEM';
+  return 'EĞİK DURUŞ — KARMA';
+}
+
+function getModeClass(mode) {
+  if (mode === 'upright') return 'horiz';
+  if (mode === 'flat')    return 'flat';
+  return 'vert';
+}
+
+// Returns a blend factor 0=upright, 1=flat for axis interpolation
+function getFlatBlend(beta) {
+  const ab = Math.abs(beta);
+  if (ab >= 65) return 0;
+  if (ab <= 25) return 1;
+  return 1 - (ab - 25) / 40;
+}
+
+function onDeviceOrientation(e) {
+  if (e.beta === null) return;
+  orient.alpha = e.alpha || 0;
+  orient.beta  = e.beta  || 0;
+  orient.gamma = e.gamma || 0;
+  orient.valid = true;
+
+  // Smooth
+  orientSmooth.beta  += (orient.beta  - orientSmooth.beta)  * 0.15;
+  orientSmooth.gamma += (orient.gamma - orientSmooth.gamma) * 0.15;
+
+  const mode = classifyOrientation(orientSmooth.beta);
+  orientMode = mode;
+
+  // Update widget
+  drawOrientWidget(orientSmooth.beta, orientSmooth.gamma, mode);
+
+  // Update labels
+  updateRadarLabels(mode);
+
+  // Update text
+  const modeEl = document.getElementById('orientMode');
+  modeEl.textContent = getModeLabel(mode);
+  modeEl.className = 'orient-mode ' + getModeClass(mode);
+
+  document.getElementById('orientAngles').textContent =
+    `β:${Math.round(orientSmooth.beta)}° γ:${Math.round(orientSmooth.gamma)}° α:${Math.round(orient.alpha)}°`;
+}
+
+async function requestOrientPerm() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const res = await DeviceOrientationEvent.requestPermission();
+      if (res === 'granted') {
+        window.addEventListener('deviceorientation', onDeviceOrientation, true);
+        document.getElementById('btnPerm').style.display = 'none';
+        document.getElementById('orientPerm').classList.remove('show');
+        showToast('✓ Yönelim sensörü aktif');
+      } else {
+        showToast('❌ İzin reddedildi', true);
+      }
+    } catch(e) {
+      showToast('❌ İzin hatası: ' + e.message, true);
+    }
+  }
+}
+
+function initOrientation() {
+  // iOS 13+ requires explicit permission
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    document.getElementById('btnPerm').style.display = 'inline-block';
+    document.getElementById('orientPerm').classList.add('show');
+    document.getElementById('orientPerm').textContent = '⚠ iOS: Sensör izni gerekli →';
+  } else if (window.DeviceOrientationEvent) {
+    // Android / desktop — no permission needed
+    window.addEventListener('deviceorientation', onDeviceOrientation, true);
+    document.getElementById('orientMode').textContent = 'SENSÖR AKTİF';
+    document.getElementById('orientMode').className = 'orient-mode horiz';
+  } else {
+    document.getElementById('orientMode').textContent = 'SENSÖR YOK';
+    document.getElementById('orientAngles').textContent = 'Cihaz sensörü bulunamadı';
+  }
+}
+
+// Draw initial widget
+drawOrientWidget(90, 0, 'upright');
+initOrientation();
+
+// ─── DIRECTION TEXT (orientation-aware) ───────────────────────────────────────
+function dirText(a) {
+  if (!isStereo) return 'MONO — YÖN SINIRLI';
+
+  const blend = orient.valid ? getFlatBlend(orientSmooth.beta) : 0;
+
+  if (blend > 0.6) {
+    // FLAT MODE — vertical plane labels
+    if (a < 22)  return '◀◀ KESKİN SOL';
+    if (a < 60)  return '↖ SOL YUKARI';
+    if (a < 80)  return '↑ YUKARI SOL';
+    if (a < 100) return '↑ DOĞRUDAN YUKARI';
+    if (a < 120) return '↑ YUKARI SAĞ';
+    if (a < 158) return '↗ SAĞ YUKARI';
+    return 'KESKİN SAĞ ▶▶';
+  } else {
+    // UPRIGHT MODE — horizontal plane labels
+    if (a < 22)  return '◀◀ KESKİN SOL';
+    if (a < 60)  return '◀ SOL ÖN';
+    if (a < 80)  return '↖ HAFİF SOL';
+    if (a < 100) return '↑ MERKEZ ÖN';
+    if (a < 120) return '↗ HAFİF SAĞ';
+    if (a < 158) return 'SAĞ ÖN ▶';
+    return 'KESKİN SAĞ ▶▶';
+  }
 }
 
 // Initial radar draw
