@@ -61,7 +61,6 @@
     .sdot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    /* KALICI ZİRVE HAFIZALI SES ŞİDDETİ ALANI */
     .vol-container {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 15px;
     }
@@ -189,7 +188,7 @@
   <div class="spectrum-wrap">
     <div class="spectrum-hdr">
       <div class="spectrum-title">Frekans Spektrumu</div>
-      <div class="mode-tag" id="modeTag">BAĞLANILIYOR</div>
+      <div class="mode-tag" id="modeTag">BEKLENİYOR</div>
     </div>
     <canvas id="specCanvas" height="55"></canvas>
   </div>
@@ -216,7 +215,7 @@ let isRunning = false, isStereo = false;
 let totalSaved = 0, lastLogTs = 0;
 let historyData = [];
 let smoothAngle = 90, smoothConf = 0, smoothVol = 0;
-let maxPeakLevel = 0; // Kalıcı Zirve Seviyesi Hafızası
+let maxPeakLevel = 0;
 
 const ANGLE_BUF_SIZE = 6;
 let angleBuf = Array(ANGLE_BUF_SIZE).fill(90);
@@ -243,9 +242,6 @@ function drawRadarBackground() {
 }
 drawRadarBackground();
 
-// ══════════════════════════════════════════════
-//  ZAMAN GECİKMESİ ANALİZ MOTORU (CROSS-CORRELATION)
-// ══════════════════════════════════════════════
 function mainLoop() {
   if (!isRunning) return;
 
@@ -254,7 +250,6 @@ function mainLoop() {
   let confidence = 0;
 
   if (isStereo) {
-    // Çift Kanallı Gerçek Fiziksel Yön Bulma Modu
     const timeDataL = new Float32Array(analyserL.fftSize);
     const timeDataR = new Float32Array(analyserR.fftSize);
     analyserL.getFloatTimeDomainData(timeDataL);
@@ -272,7 +267,6 @@ function mainLoop() {
     rms = Math.sqrt((sumL + sumR) / (2 * timeDataL.length));
 
     if (rms > 0.005) {
-      // Zaman Gecikmesi Taraması (README'deki ±20 örnek sınırı)
       let maxLag = 20;
       let bestLag = 0;
       let maxVal = -Infinity;
@@ -292,13 +286,11 @@ function mainLoop() {
         }
       }
 
-      // Lag değerini Açıya Haritala (-20 = Sol, 0 = Ön Merkez, +20 = Sağ)
       let lagRatio = bestLag / maxLag;
       targetAngle = 90 + (lagRatio * 85); 
       confidence = Math.min(0.98, rms * 35);
     }
   } else {
-    // Mono Cihazlar İçin Gelişmiş Akustik Centroid Fallback Modu
     const timeDataM = new Float32Array(analyserM.fftSize);
     const freqDataM = new Float32Array(analyserM.frequencyBinCount);
     analyserM.getFloatTimeDomainData(timeDataM);
@@ -324,10 +316,9 @@ function mainLoop() {
     }
   }
 
-  // Anlık Ses Şiddeti Hesaplama ve Kalıcı Zirve Takibi
   let currentVolInt = Math.min(100, Math.max(0, Math.round(rms * 550)));
   if (currentVolInt > maxPeakLevel) {
-    maxPeakLevel = currentVolInt; // Sadece daha şiddetli ses gelirse güncellenir
+    maxPeakLevel = currentVolInt;
   }
 
   smoothVol += (currentVolInt - smoothVol) * 0.3;
@@ -345,7 +336,6 @@ function mainLoop() {
     smoothAngle += (medAngle - smoothAngle) * 0.25;
     smoothConf += (confidence - smoothConf) * 0.25;
 
-    // UI Güncellemeleri
     document.getElementById('needlePivot').style.transform = `rotate(${smoothAngle - 90}deg)`;
     document.getElementById('angleNum').textContent = Math.round(smoothAngle);
     document.getElementById('angleNum').classList.toggle('hot', smoothConf > 0.25);
@@ -353,11 +343,8 @@ function mainLoop() {
     
     document.getElementById('sv1').textContent = '%' + Math.round(smoothConf * 100);
     document.getElementById('sv2').textContent = maxPeakLevel + ' Pts';
-
-    // Yön Etiketleri
     document.getElementById('dirLabel').textContent = dirText(smoothAngle);
 
-    // E-Tablo ve Geçmiş Tetikleyicisi (Hızlı tepki, sıfır kayıp)
     if (smoothConf > 0.18 && currentVolInt > 2) {
       const now = Date.now();
       if (now - lastLogTs > 750) {
@@ -398,9 +385,6 @@ function drawSpectrumGraph(freqData) {
   }
 }
 
-// ══════════════════════════════════════════════
-//  BULUT VE GEÇMİŞ LİSTESİ YÖNETİMİ
-// ══════════════════════════════════════════════
 function pushToGoogleSheet(angle, conf) {
   const timeStr = new Date().toLocaleTimeString('tr-TR');
   const rAngle = Math.round(angle);
@@ -447,9 +431,6 @@ function clearLogs() {
   updateHistoryUI();
 }
 
-// ══════════════════════════════════════════════
-//  MİKROFON SÜRÜCÜSÜ VE DONANIM BAĞLANTI AYARI
-// ══════════════════════════════════════════════
 async function toggleMic() {
   if (isRunning) {
     isRunning = false;
@@ -474,17 +455,28 @@ async function toggleMic() {
   btn.textContent = 'Bağlanıyor...';
 
   try {
-    // Stereo (Çift Kanal) çekebilmek için donanım filtrelerini kapatıp kanal sayısını 2 istiyoruz.
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 }, sampleRate: 48000 }
-    });
+    // KADEMELİ ERİŞİM SİSTEMİ: Safari ve iframe huysuzluğunu ezmek için kademeli deneme
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: { ideal: 2 } }
+      });
+    } catch (safariErr) {
+      // Gelişmiş ayar reddedilirse en düz ve ham mikrofon isteğine geri dön
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
 
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // iOS Safari uyku modunu (suspended) zorla uyandır
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
+
     source = audioCtx.createMediaStreamSource(stream);
     
     const track = stream.getAudioTracks()[0];
-    const settings = track.getSettings();
-    isStereo = settings.channelCount >= 2;
+    const settings = track ? track.getSettings() : {};
+    isStereo = settings.channelCount && settings.channelCount >= 2;
 
     if (isStereo) {
       splitter = audioCtx.createChannelSplitter(2);
@@ -494,11 +486,9 @@ async function toggleMic() {
       analyserR = audioCtx.createAnalyser();
       analyserL.fftSize = 2048;
       analyserR.fftSize = 2048;
-      analyserL.smoothingTimeConstant = 0.2;
-      analyserR.smoothingTimeConstant = 0.2;
 
-      splitter.connect(analyserL, 0); // Sol kanal mikrofonu
-      splitter.connect(analyserR, 1); // Sağ kanal mikrofonu
+      splitter.connect(analyserL, 0);
+      splitter.connect(analyserR, 1);
 
       document.getElementById('modeTag').textContent = 'STEREO AKTİF';
       document.getElementById('modeTag').style.color = 'var(--accent3)';
@@ -506,7 +496,6 @@ async function toggleMic() {
     } else {
       analyserM = audioCtx.createAnalyser();
       analyserM.fftSize = 2048;
-      analyserM.smoothingTimeConstant = 0.2;
       source.connect(analyserM);
 
       document.getElementById('modeTag').textContent = 'MONO (TON ANALİZİ)';
