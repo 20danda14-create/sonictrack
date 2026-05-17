@@ -1,11 +1,6 @@
 /**
  * SonicTrack — Ses Yönü Bulucu
- * Google Apps Script Backend
- * ─────────────────────────────
- * Kurulum:
- * 1. Bu dosyayı Apps Script editörüne yapıştırın (Code.gs)
- * 2. index.html dosyasını da ayrı bir HTML dosyası olarak ekleyin
- * 3. Dağıt → Web uygulaması olarak dağıt → Herkes erişebilir
+ * Google Apps Script Backend (STEREO ENTEGRASYONLU)
  */
 
 // ── WEB UYGULAMASINI BAŞLAT ──
@@ -59,15 +54,15 @@ function kaydetSesYonu(aci, siddet, gecikme, yerelSaat) {
     
     // Satırı ekle
     sheet.appendRow([
-      new Date(),            // Sistem zaman damgası
-      aciNum,                // Açı
-      parseFloat(siddet),    // Güven skoru
-      parseInt(gecikme) || 0, // Gecikme
-      yerelSaat || '',       // Cihazın yerel saati
-      yonEtiketi             // Yön açıklaması
+      new Date(),             // Sistem zaman damgası
+      aciNum,                 // Açı
+      parseFloat(siddet),     // Güven skoru
+      parseInt(gecikme) || 0, // Örneklem Gecikmesi (TDOA)
+      yerelSaat || '',        // Cihazın yerel saati
+      yonEtiketi              // Yön açıklaması
     ]);
     
-    // Son satırı renklendir (güven skoruna göre)
+    // Son satırı renklendir (güven skoruna göre görsel dinamizm)
     var lastRow = sheet.getLastRow();
     var confScore = parseFloat(siddet);
     var rowColor = confScore > 0.6 ? '#0d2b1a' : confScore > 0.3 ? '#1a1a0a' : '#1a0a0a';
@@ -81,18 +76,18 @@ function kaydetSesYonu(aci, siddet, gecikme, yerelSaat) {
   }
 }
 
-// ── ACI → YÖN ETIKETI ──
+// ── ACI → YÖN ETIKETI DÖNÜŞTÜRÜCÜ ──
 function aciyaGoreYon(aci) {
-  if (aci < 15)  return 'Sol Ön';
-  if (aci < 40)  return 'Sol';
-  if (aci < 70)  return 'Sol Arka';
-  if (aci < 110) return aci < 90 ? 'Doğrudan Karşı (Sol)' : 'Doğrudan Karşı (Sağ)';
-  if (aci < 140) return 'Sağ Arka';
+  if (aci < 15)  return 'Sol Sektör (Tam Sol)';
+  if (aci < 45)  return 'Sol';
+  if (aci < 75)  return 'Ön Sol';
+  if (aci < 105) return 'Doğrudan Karşı';
+  if (aci < 135) return 'Ön Sağ';
   if (aci < 165) return 'Sağ';
-  return 'Sağ Ön';
+  return 'Sağ Sektör (Tam Sağ)';
 }
 
-// ── İSTATİSTİK RAPORU (opsiyonel) ──
+// ── İSTATİSTİK RAPORU ──
 function raporOlustur() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
